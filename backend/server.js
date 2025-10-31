@@ -40,7 +40,7 @@ app.post("/api/chat", async (req, res) => {
 
     console.log(" Message reçu:", message);
     console.log(" Localisation:", userLocation);
-    console.log(" Établissements disponibles:", currentPlaces?.length || 0);
+    console.log(" Restaurants disponibles:", currentPlaces?.length || 0);
 
     if (!message || message.trim() === "") {
       return res.status(400).json({
@@ -55,32 +55,30 @@ app.post("/api/chat", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: `Tu es Askbot, un assistant intelligent spécialisé dans la recherche de restaurants, pharmacies et établissements.
+          content: `Tu es Askbot, un assistant intelligent spécialisé dans la recherche de restaurants.
           
           FORMAT DE RÉPONSE OBLIGATOIRE en JSON :
           {
             "response": "Réponse textuelle friendly et utile en français",
-            "action": "filter_restaurants" | "filter_pharmacies" | "show_route" | "none",
+            "action": "filter_restaurants" | "show_route" | "none",
             "targetId": null ou "id_etablissement"
           }
 
           RÈGLES D'ACTION :
           - "filter_restaurants" : si l'utilisateur demande des restaurants, resto, manger, cuisine
-          - "filter_pharmacies" : si l'utilisateur demande des pharmacies, pharmacie, médicament, santé
           - "show_route" : si l'utilisateur demande un itinéraire, chemin, route, directions
           - "none" : pour les salutations, remerciements, questions générales
 
           SOIS :
           - Naturel et amical en français
           - Concis et utile
-          - Spécialisé dans la recherche d'établissements
+          - Spécialisé dans la recherche de restaurants
           - Encourage à utiliser la localisation si besoin
 
           EXEMPLES :
           User: "Montre les restaurants" → {"response": "Je cherche les restaurants près de vous...", "action": "filter_restaurants", "targetId": null}
-          User: "Pharmacie la plus proche" → {"response": "Voici la pharmacie la plus proche...", "action": "filter_pharmacies", "targetId": null}
           User: "Itinéraire vers le plus proche" → {"response": "Je calcule l'itinéraire...", "action": "show_route", "targetId": null}
-          User: "Bonjour" → {"response": "Bonjour ! Je peux vous aider à trouver restaurants/pharmacies 😊", "action": "none", "targetId": null}`,
+          User: "Bonjour" → {"response": "Bonjour ! Je peux vous aider à trouver des restaurants 😊", "action": "none", "targetId": null}`,
         },
         {
           role: "user",
@@ -92,14 +90,14 @@ app.post("/api/chat", async (req, res) => {
     });
 
     const botResponse = completion.choices[0].message.content;
-    console.log(" Réponse OpenAI brute:", botResponse);
+    console.log("🤖 Réponse OpenAI brute:", botResponse);
 
     // Parser la réponse JSON
     try {
       const parsedResponse = JSON.parse(botResponse);
       res.json(parsedResponse);
     } catch (parseError) {
-      console.log(" Réponse non-JSON, utilisation du fallback");
+      console.log("⚠️ Réponse non-JSON, utilisation du fallback");
       // Fallback intelligent
       const lowerMessage = message.toLowerCase();
       let action = "none";
@@ -111,12 +109,6 @@ app.post("/api/chat", async (req, res) => {
         lowerMessage.includes("resto")
       ) {
         action = "filter_restaurants";
-      } else if (
-        lowerMessage.includes("pharmacie") ||
-        lowerMessage.includes("médicament") ||
-        lowerMessage.includes("santé")
-      ) {
-        action = "filter_pharmacies";
       } else if (
         lowerMessage.includes("itinéraire") ||
         lowerMessage.includes("chemin") ||
@@ -132,7 +124,7 @@ app.post("/api/chat", async (req, res) => {
       });
     }
   } catch (error) {
-    console.error(" Erreur OpenAI:", error);
+    console.error("❌ Erreur OpenAI:", error);
 
     res.status(500).json({
       response:
