@@ -1,72 +1,21 @@
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
-const mongoose = require("mongoose");
-const OpenAI = require("openai");
-require("dotenv").config();
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Connexion MongoDB
-const connectDB = async () => {
-  try {
-    await mongoose.connect(
-      process.env.MONGODB_URI || "mongodb://localhost:27017/myappfood",
-      {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      }
-    );
-    console.log("MongoDB connecté avec succès");
-  } catch (erreur) {
-    console.error("Erreur connexion MongoDB:", erreur);
-    process.exit(1);
-  }
-};
-
-connectDB();
-
-// Configuration OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Routes
-const routesAuth = require("./routes/auth");
-app.use("/api/auth", routesAuth);
-
-// Servir les fichiers statiques du frontend
-app.use(express.static(path.join(__dirname, "..")));
-
-// Route API de base
-app.get("/api", (req, res) => {
-  res.json({ message: "MyAppFood API est opérationnelle!" });
-});
-
-// Route santé
-app.get("/api/sante", (req, res) => {
-  res.json({
-    statut: "OK",
-    message: "MyAppFood API avec authentification opérationnelle",
-    timestamp: new Date().toISOString(),
-    baseDeDonnees:
-      mongoose.connection.readyState === 1 ? "Connectée" : "Déconnectée",
-  });
-});
-
-// Route chatbot OpenAI (existant)
+// Route chatbot OpenAI
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message, userLocation, currentPlaces } = req.body;
+    const { message } = req.body;
 
     if (!message || message.trim() === "") {
       return res.status(400).json({
         response: "Veuillez entrer un message",
+        action: "none",
+        targetId: null,
+      });
+    }
+
+    // Si OpenAI n'est pas configuré, réponse locale
+    if (!process.env.OPENAI_API_KEY) {
+      return res.json({
+        response:
+          "Je suis en mode démo. Je peux vous aider à trouver des restaurants près de vous!",
         action: "none",
         targetId: null,
       });
@@ -113,25 +62,25 @@ app.post("/api/chat", async (req, res) => {
 
     const reponseBot = completion.choices[0].message.content;
 
-    res.json({
-      response: reponseBot,
-      action: "none",
-      targetId: null,
-    });
+    // Parser la réponse JSON
+    try {
+      const parsedResponse = JSON.parse(reponseBot);
+      res.json(parsedResponse);
+    } catch (parseError) {
+      // Fallback si la réponse n'est pas du JSON valide
+      console.log("Réponse non-JSON, utilisation du fallback");
+      res.json({
+        response: reponseBot,
+        action: "none",
+        targetId: null,
+      });
+    }
   } catch (erreur) {
     console.error("Erreur OpenAI:", erreur);
-    res.status(500).json({
-      response: "Désolé, service temporairement indisponible.",
+    res.json({
+      response: "Service temporairement indisponible. Mode démo activé.",
       action: "none",
       targetId: null,
     });
   }
-});
-
-// Démarrer le serveur
-app.listen(PORT, () => {
-  console.log(`Serveur démarré sur http://localhost:${PORT}`);
-  console.log(`Frontend: http://localhost:${PORT}`);
-  console.log(`API Auth: http://localhost:${PORT}/api/auth`);
-  console.log(`Health: http://localhost:${PORT}/api/sante`);
 });
