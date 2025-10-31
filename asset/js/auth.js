@@ -1,5 +1,5 @@
 // Gestion de l'authentification avec backend
-const API_URL = "http://localhost:3000/api/auth";
+const API_URL = "https://myappfood-backend.onrender.com/api/auth";
 
 document.addEventListener("DOMContentLoaded", function () {
   // Éléments des modales
