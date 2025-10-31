@@ -28,6 +28,7 @@
               >MyAppFood</a
             >
           </div>
+
           <!-- Authentification mobile -->
           <button
             id="mobile-auth-btn"
@@ -36,7 +37,28 @@
             <i class="fas fa-user"></i>
             <span>Se connecter</span>
           </button>
+
+          <!-- Profil utilisateur mobile -->
+          <div
+            id="user-profile-mobile"
+            class="hidden lg:hidden items-center gap-2 cursor-pointer group"
+          >
+            <img
+              id="user-avatar-mobile"
+              src="asset/images/profile.jpg"
+              alt="Profil"
+              class="w-10 h-10 rounded-full border-2 border-orange-500 object-cover group-hover:border-orange-600 transition-colors"
+            />
+            <div>
+              <p
+                id="user-name-mobile"
+                class="font-semibold text-gray-800 text-sm"
+              ></p>
+            </div>
+            <i class="fa-solid fa-caret-down text-gray-600"></i>
+          </div>
         </div>
+
         <!-- Barre de recherche et localisation -->
         <div class="w-full lg:w-auto flex-1 max-w-3xl" id="search-container">
           <div
@@ -279,8 +301,9 @@
           >
             <div class="loading-spinner mb-4"></div>
             <p class="text-gray-600 text-center">
-              Cliquez sur "votre position" dans le header pour voir les
-              restaurants proches
+              Cliquez sur "votre position" dans l'En-tête
+              <i class="fa-solid fa-arrow-up"></i> pour voir les restaurants
+              proches
             </p>
           </div>
         </div>
