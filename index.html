@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>AppFood</title>
+    <link rel="icon" href="chemin/vers/icone.ico" />
+    <link rel="stylesheet" href="asset/css/index.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  </head>
+  <body>
+    <!-- HEADER -->
+    <header class="p-2 md:p-8 m-0">
+      <nav class="flex flex-col lg:flex-row items-center justify-between gap-4">
+        <!-- Logo -->
+        <div class="flex items-center justify-between w-full lg:w-auto">
+          <div class="text-lg">
+            <a href="#" class="text-xl md:text-2xl font-bold text-black"
+              >MyAppFood</a
+            >
+          </div>
+          <!-- Authentification mobile -->
+          <button
+            id="mobile-auth-btn"
+            class="lg:hidden flex items-center gap-2 px-4 py-2 bg-orange-400 text-white rounded hover:bg-orange-600 transition-colors"
+          >
+            <i class="fas fa-user"></i>
+            <span>Se connecter</span>
+          </button>
+        </div>
+        <!-- Barre de recherche et localisation -->
+        <div class="w-full lg:w-auto flex-1 max-w-3xl" id="search-container">
+          <div
+            class="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-4 p-3 md:p-4 md:px-8 shadow-md rounded-lg border border-gray-100 bg-white"
+          >
+            <!-- Localisation -->
+            <div
+              class="flex items-center gap-2 px-2 py-2 md:py-1 rounded-lg transition-colors hover:bg-gray-50"
+              id="location-selector"
+            >
+              <i class="fa-solid fa-location-dot text-lg text-orange-500"></i>
+              <span class="flex-1 text-sm md:text-base" id="location-text"
+                >Votre position</span
+              >
+              <i class="fa-solid fa-caret-down"></i>
+            </div>
+            <span class="hidden md:block text-gray-300">|</span>
+            <!-- Formulaire de recherche -->
+            <form action="" class="relative flex-1" id="search-form">
+              <input
+                class="w-48 border-none outline-0 rounded px-2 md:px-8 py-2 pr-10 bg-transparent text-sm md:text-base"
+                type="text"
+                placeholder="Recherche..."
+                id="search-input"
+                name="search"
+              />
+            </form>
+          </div>
+        </div>
+
+        <div class="hidden lg:flex items-center gap-2">
+          <button
+            id="desktop-auth-btn"
+            class="flex items-center gap-2 px-6 py-3 bg-orange-400 text-white rounded-lg hover:bg-orange-600 transition-all duration-300 shadow-md hover:shadow-lg font-medium"
+          >
+            <i class="fas fa-user"></i>
+            <span>Se connecter</span>
+          </button>
+
+          <div
+            id="user-profile"
+            class="hidden items-center gap-3 cursor-pointer group"
+          >
+            <img
+              id="user-avatar"
+              src="asset/images/profile.jpg"
+              alt="Profil"
+              class="w-12 h-12 rounded-full border-2 border-orange-500 object-cover group-hover:border-orange-600 transition-colors"
+            />
+            <div>
+              <p id="user-name" class="font-semibold text-gray-800"></p>
+              <p class="text-xs text-gray-500">Cliquez pour déconnecter</p>
+            </div>
+            <i class="fa-solid fa-caret-down text-gray-600"></i>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <!-- MODAL DE CONNEXION -->
+    <div
+      id="login-modal"
+      class="hidden fixed inset-0 bg-black bg-opacity-60 z-[100] flex items-center justify-center p-4 modal-overlay"
+    >
+      <div
+        class="bg-white rounded-xl shadow-xl w-[30%]h-[20%] max-w-md p-4 modal-content relative"
+      >
+        <!-- Bouton fermer -->
+        <button
+          id="close-login-modal"
+          class="absolute top-2 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <i class="fas fa-times text-gray-600 text-xl"></i>
+        </button>
+        <!-- En-tête -->
+        <div class="text-center mb-2">
+          <div
+            class="inline-flex items-center justify-center w-8 h-8 bg-orange-100 rounded-full mb-2"
+          >
+            <i class="fas fa-utensils text-orange-500 text-2xl"></i>
+          </div>
+          <h2 class="text-3xl font-bold text-gray-800">Connexion</h2>
+          <p class="text-gray-600 mt-2">Accédez à votre compte MyAppFood</p>
+        </div>
+        <!-- Formulaire de connexion -->
+        <form id="login-form" class="space-y-2">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              id="login-email"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:border-orange-500 transition-colors"
+              placeholder="votre@email.com"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+              Mot de passe
+            </label>
+            <input
+              type="password"
+              id="login-password"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:border-orange-500 transition-colors"
+              placeholder="••••••••"
+            />
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <a
+              href="#"
+              class="text-orange-500 hover:text-orange-600 font-medium"
+              >Mot de passe oublié ?</a
+            >
+          </div>
+          <button
+            type="submit"
+            class="w-full py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+          >
+            Se connecter
+          </button>
+        </form>
+        <p class="text-center text-gray-600 mt-3">
+          Vous n'avez pas de compte ?
+          <a
+            href="#"
+            id="show-register"
+            class="text-orange-500 font-semibold hover:text-orange-600"
+          >
+            Inscrivez-vous ici
+          </a>
+        </p>
+      </div>
+    </div>
+
+    <!-- MODAL D'INSCRIPTION -->
+    <div
+      id="register-modal"
+      class="hidden fixed inset-0 bg-black bg-opacity-60 z-[100] flex items-center justify-center p-4 modal-overlay"
+    >
+      <div
+        class="bg-white rounded-xl shadow-xl w-[30%]h-[20%] max-w-md p-4 modal-content relative"
+      >
+        <!-- Bouton fermer -->
+        <button
+          id="close-register-modal"
+          class="absolute top-2 right-4 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <i class="fas fa-times text-gray-600 text-xl"></i>
+        </button>
+        <!-- En-tête -->
+        <div class="text-center mb-4">
+          <div
+            class="inline-flex items-center justify-center w-10 h-10 bg-orange-100 rounded-full mb-2"
+          >
+            <i class="fas fa-user-plus text-orange-500 text-xl"></i>
+          </div>
+          <h2 class="text-3xl font-bold text-gray-800">Inscription</h2>
+          <p class="text-gray-600 mt-2">Créez votre compte MyAppFood</p>
+        </div>
+        <!-- Formulaire d'inscription -->
+        <form id="register-form" class="space-y-2">
+          <div>
+            <input
+              type="email"
+              id="register-email"
+              required
+              class="w-full p-4 border border-gray-300 rounded-lg outline-none focus:border-orange-500 transition-colors"
+              placeholder="votre@email.com"
+            />
+          </div>
+          <div>
+            <input
+              type="password"
+              id="register-password"
+              required
+              minlength="6"
+              class="w-full px-2 py-2 border border-gray-300 rounded-lg outline-none focus:border-orange-500 transition-colors"
+              placeholder="mot de passe"
+            />
+          </div>
+          <div>
+            <input
+              type="password"
+              id="register-password-confirm"
+              required
+              minlength="6"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:border-orange-500 transition-colors"
+              placeholder="Confirmer  mot de passe"
+            />
+          </div>
+          <button
+            type="submit"
+            class="w-full py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+          >
+            S'inscrire
+          </button>
+        </form>
+        <p class="text-center text-gray-600 mt-6">
+          Vous avez déjà un compte ?
+          <a
+            href="#"
+            id="show-login"
+            class="text-orange-500 font-semibold hover:text-orange-600"
+          >
+            Connectez-vous ici
+          </a>
+        </p>
+      </div>
+    </div>
+
+    <!-- SECTION CARTE ET RESTAURANTS -->
+    <section class="p-8 max-w-7xl mx-auto">
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-3xl font-bold text-gray-800">
+            Découvrez autour de vous
+          </h2>
+          <p class="text-gray-600 mt-1">
+            Restaurants et pharmacies à proximité
+          </p>
+        </div>
+      </div>
+      <div class="flex gap-6 flex-col lg:flex-row">
+        <div
+          class="lg:w-2/5 space-y-4 max-h-[600px] overflow-y-auto pr-2"
+          id="places-list"
+        >
+          <div
+            id="loading-message"
+            class="flex flex-col items-center justify-center py-20"
+          >
+            <div class="loading-spinner mb-4"></div>
+            <p class="text-gray-600 text-center">
+              Cliquez sur "votre position" dans le header pour voir les
+              établissements proches
+            </p>
+          </div>
+        </div>
+        <div class="lg:w-3/5">
+          <div id="map" class="shadow-xl"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bouton flottant chatbot -->
+    <button
+      id="open-chat"
+      class="float-button fixed bottom-6 right-6 w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-full shadow-lg hover:shadow-2xl hover:scale-110 transition-all duration-300 z-50 flex items-center justify-center"
+    >
+      <i class="fas fa-comments text-2xl"></i>
+      <span
+        class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse"
+      ></span>
+    </button>
+
+    <!-- Chatbot -->
+    <div
+      id="chatbot"
+      class="hidden fixed bottom-6 right-6 w-[90vw] max-w-[400px] h-[400px] md:h-[500px] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
+    >
+      <div class="flex items-center justify-between bg-orange-500 px-4 py-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 bg-white rounded-full p-2 flex items-center justify-center"
+          >
+            <i class="fas fa-robot text-orange-500 text-xl"></i>
+          </div>
+          <div>
+            <h1 class="text-white font-semibold text-lg">Askbot</h1>
+            <p class="text-orange-100 text-xs">En ligne</p>
+          </div>
+        </div>
+        <button
+          id="close-chat"
+          class="w-10 h-10 text-white hover:bg-orange-600 rounded-full cursor-pointer transition-all duration-200 flex items-center justify-center"
+        >
+          <i class="fa-solid fa-times text-xl"></i>
+        </button>
+      </div>
+      <div
+        class="chat-messages flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50"
+      >
+        <div class="flex gap-2 items-start message-bubble">
+          <div
+            class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0"
+          >
+            <i class="fas fa-robot text-white text-sm"></i>
+          </div>
+          <div class="flex-1">
+            <div
+              class="bg-white rounded-2xl rounded-tl-sm shadow-sm p-3 max-w-[85%]"
+            >
+              <p class="text-sm text-gray-800">
+                Salut ! 👋 Comment puis-je t'aider à te retrouver ? Cherches-tu
+                un restaurant, une pharmacie ou autre chose ? Je suis prêt à
+                t'aider !
+              </p>
+            </div>
+            <span class="text-xs text-gray-500 ml-2 mt-1 block"
+              >Maintenant</span
+            >
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-gray-200 p-4 bg-white">
+        <form
+          id="chat-form"
+          class="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2"
+        >
+          <input
+            type="text"
+            id="message-input"
+            placeholder="Écrivez votre message..."
+            class="flex-1 bg-transparent border-none outline-none text-sm placeholder-gray-500"
+          />
+          <button
+            type="submit"
+            class="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-md"
+          >
+            <i class="fas fa-paper-plane text-sm"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-orange-500 text-white mt-10">
+      <div class="container mx-auto py-10 px-4">
+        <div class="grid md:grid-cols-9 grid-cols-1 gap-6">
+          <div class="lg:col-span-4 col-span-12">
+            <a href="#" class="text-2xl font-bold text-white">MyAppFood</a>
+            <p class="mt-6 text-gray-100">
+              est une plateforme innovante qui vous permet de découvrir les
+              meilleurs restaurants et pharmacies autour de vous.
+            </p>
+          </div>
+          <div class="lg:col-span-2 md:col-span-4 col-span-12">
+            <h5 class="tracking-wide text-white font-semibold text-lg mb-4">
+              Contact
+            </h5>
+            <ul class="list-none space-y-3">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-100 hover:text-white transition-all duration-300 flex items-center gap-2"
+                >
+                  <i class="fas fa-map-marker-alt"></i>
+                  123 Rue Balouzon, Daloa, Côte d'Ivoire
+                </a>
+              </li>
+              <li>
+                <a
+                  href="tel:+22501234567"
+                  class="text-gray-100 hover:text-white transition-all duration-300 flex items-center gap-2"
+                >
+                  <i class="fas fa-phone"></i>
+                  +225 01 23 45 67 89
+                </a>
+              </li>
+              <li>
+                <a
+                  href="mailto:myappfood@gmail.com"
+                  class="text-gray-100 hover:text-white transition-all duration-300 flex items-center gap-2"
+                >
+                  <i class="fas fa-envelope"></i>
+                  myappfood@gmail.com
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="lg:col-span-3 md:col-span-4 col-span-12">
+            <h5 class="tracking-wide text-white font-semibold text-lg mb-4">
+              Newsletter
+            </h5>
+            <p class="text-gray-100 mb-4">
+              Recevez les dernières nouvelles et offres directement dans votre
+              boîte mail.
+            </p>
+            <form id="newsletter-form" class="space-y-3">
+              <input
+                id="newsletter-email"
+                type="email"
+                required
+                class="w-full py-2 px-4 bg-white bg-opacity-20 text-white placeholder-gray-200 rounded-lg outline-none border border-transparent focus:border-white focus:bg-opacity-30 transition-all"
+                placeholder="votre@email.com"
+              />
+              <button
+                type="submit"
+                class="w-full py-2 px-5 bg-white text-orange-500 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-300"
+              >
+                S'abonner
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-orange-300">
+        <div class="container mx-auto py-6 px-6">
+          <div class="md:flex md:justify-between md:items-center">
+            <p class="text-center md:text-left text-gray-100">
+              &copy; 2025 MyAppFood. Tous droits réservés.
+            </p>
+            <div class="flex justify-center md:justify-end gap-4 mt-4 md:mt-0">
+              <a
+                href="#"
+                class="text-white hover:text-gray-200 transition-colors"
+              >
+                <i class="fab fa-facebook text-xl"></i>
+              </a>
+              <a
+                href="#"
+                class="text-white hover:text-gray-200 transition-colors"
+              >
+                <i class="fab fa-linkedin text-xl"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="asset/js/index.js"></script>
+    <script src="asset/js/auth.js"></script>
+  </body>
+</html>
