@@ -1,0 +1,16 @@
+{
+  "name": "myappfood-frontend",
+  "version": "1.0.0",
+  "description": "Frontend MyAppFood",
+  "scripts": {
+    "build": "echo 'Building MyAppFood frontend' && cp -r asset . && cp index.html .",
+    "dev": "echo 'Frontend only - use live server for development'"
+  },
+  "keywords": [
+    "food",
+    "restaurants",
+    "geolocation"
+  ],
+  "author": "Votre nom",
+  "license": "MIT"
+}
