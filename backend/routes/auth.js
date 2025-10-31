@@ -1,23 +1,21 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const Utilisateur = require("../models/Utilisateur");
-const { verifierAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
 // Générer token JWT
 const genererToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id }, process.env.JWT_SECRET || "secret_temporaire_123", {
     expiresIn: process.env.JWT_EXPIRE || "30d",
   });
 };
 
-// Inscription
+// Inscription (mode démo)
 router.post("/inscription", async (req, res) => {
   try {
-    const { email, motDePasse, nom, prenom, telephone } = req.body;
+    const { email, motDePasse } = req.body;
 
-    // Validation
+    // Validation simple
     if (!email || !motDePasse) {
       return res.status(400).json({
         succes: false,
@@ -25,42 +23,31 @@ router.post("/inscription", async (req, res) => {
       });
     }
 
-    if (motDePasse.length < 5) {
+    if (motDePasse.length < 4) {
       return res.status(400).json({
         succes: false,
-        message: "Le mot de passe doit contenir au moins 5 caractères",
+        message: "Le mot de passe doit contenir au moins 4 caractères",
       });
     }
 
-    // Vérifier si l'utilisateur existe déjà
-    const utilisateurExistant = await Utilisateur.findOne({ email });
-    if (utilisateurExistant) {
-      return res.status(400).json({
-        succes: false,
-        message: "Un compte avec cet email existe déjà",
-      });
-    }
-
-    // Créer nouvel utilisateur
-    const nouvelUtilisateur = new Utilisateur({
-      email,
-      motDePasse,
-      nom: nom || "",
-    });
-
-    await nouvelUtilisateur.save();
+    // Simulation d'utilisateur (sans base de données)
+    const utilisateurDemo = {
+      id: Date.now(), // ID unique
+      email: email,
+      nom: email.split("@")[0], // Utilise le début de l'email comme nom
+    };
 
     // Générer token
-    const token = genererToken(nouvelUtilisateur._id);
+    const token = genererToken(utilisateurDemo.id);
 
     res.status(201).json({
       succes: true,
-      message: "Compte créé avec succès",
+      message: "Compte créé avec succès (mode démo)",
       token,
       utilisateur: {
-        id: nouvelUtilisateur._id,
-        email: nouvelUtilisateur.email,
-        nom: nouvelUtilisateur.nom,
+        id: utilisateurDemo.id,
+        email: utilisateurDemo.email,
+        nom: utilisateurDemo.nom,
       },
     });
   } catch (erreur) {
@@ -72,7 +59,7 @@ router.post("/inscription", async (req, res) => {
   }
 });
 
-// Connexion
+// Connexion (mode démo)
 router.post("/connexion", async (req, res) => {
   try {
     const { email, motDePasse } = req.body;
@@ -85,35 +72,24 @@ router.post("/connexion", async (req, res) => {
       });
     }
 
-    // Trouver l'utilisateur
-    const utilisateur = await Utilisateur.findOne({ email });
-    if (!utilisateur) {
-      return res.status(401).json({
-        succes: false,
-        message: "Email ou mot de passe incorrect",
-      });
-    }
-
-    // Vérifier le mot de passe
-    const motDePasseValide = await utilisateur.comparerMotDePasse(motDePasse);
-    if (!motDePasseValide) {
-      return res.status(401).json({
-        succes: false,
-        message: "Email ou mot de passe incorrect",
-      });
-    }
+    // Simulation d'utilisateur (accepte tout en mode démo)
+    const utilisateurDemo = {
+      id: 1, // ID fixe pour la démo
+      email: email,
+      nom: email.split("@")[0],
+    };
 
     // Générer token
-    const token = genererToken(utilisateur._id);
+    const token = genererToken(utilisateurDemo.id);
 
     res.json({
       succes: true,
-      message: "Connexion réussie",
+      message: "Connexion réussie (mode démo)",
       token,
       utilisateur: {
-        id: utilisateur._id,
-        email: utilisateur.email,
-        nom: utilisateur.nom,
+        id: utilisateurDemo.id,
+        email: utilisateurDemo.email,
+        nom: utilisateurDemo.nom,
       },
     });
   } catch (erreur) {
@@ -125,12 +101,17 @@ router.post("/connexion", async (req, res) => {
   }
 });
 
-// Profil utilisateur
-router.get("/profil", verifierAuth, async (req, res) => {
+// Profil utilisateur (mode démo)
+router.get("/profil", async (req, res) => {
   try {
+    // En mode démo, retourner un profil basique
     res.json({
       succes: true,
-      utilisateur: req.utilisateur,
+      utilisateur: {
+        id: 1,
+        email: "utilisateur@demo.com",
+        nom: "Utilisateur Demo",
+      },
     });
   } catch (erreur) {
     console.error("Erreur profil:", erreur);
