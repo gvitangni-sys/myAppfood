@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const mongoose = require("mongoose");
 const OpenAI = require("openai");
 require("dotenv").config();
 
@@ -11,36 +12,57 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Connexion MongoDB
+const connectDB = async () => {
+  try {
+    await mongoose.connect(
+      process.env.MONGODB_URI || "mongodb://localhost:27017/myappfood",
+      {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      }
+    );
+    console.log("MongoDB connecté avec succès");
+  } catch (erreur) {
+    console.error("Erreur connexion MongoDB:", erreur);
+    process.exit(1);
+  }
+};
+
+connectDB();
+
 // Configuration OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Servir les fichiers statiques du frontend (remonte d'un niveau depuis backend)
+// Routes
+const routesAuth = require("./routes/auth");
+app.use("/api/auth", routesAuth);
+
+// Servir les fichiers statiques du frontend
 app.use(express.static(path.join(__dirname, "..")));
 
 // Route API de base
 app.get("/api", (req, res) => {
-  res.json({ message: "Food Bot API is working!" });
+  res.json({ message: "MyAppFood API est opérationnelle!" });
 });
 
 // Route santé
-app.get("/api/health", (req, res) => {
+app.get("/api/sante", (req, res) => {
   res.json({
-    status: "OK",
-    message: "Food Bot API avec OpenAI opérationnel! ",
+    statut: "OK",
+    message: "MyAppFood API avec authentification opérationnelle",
     timestamp: new Date().toISOString(),
+    baseDeDonnees:
+      mongoose.connection.readyState === 1 ? "Connectée" : "Déconnectée",
   });
 });
 
-// Route chatbot OpenAI
+// Route chatbot OpenAI (existant)
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, userLocation, currentPlaces } = req.body;
-
-    console.log(" Message reçu:", message);
-    console.log(" Localisation:", userLocation);
-    console.log(" Restaurants disponibles:", currentPlaces?.length || 0);
 
     if (!message || message.trim() === "") {
       return res.status(400).json({
@@ -89,84 +111,27 @@ app.post("/api/chat", async (req, res) => {
       temperature: 0.7,
     });
 
-    const botResponse = completion.choices[0].message.content;
-    console.log("🤖 Réponse OpenAI brute:", botResponse);
+    const reponseBot = completion.choices[0].message.content;
 
-    // Parser la réponse JSON
-    try {
-      const parsedResponse = JSON.parse(botResponse);
-      res.json(parsedResponse);
-    } catch (parseError) {
-      console.log("⚠️ Réponse non-JSON, utilisation du fallback");
-      // Fallback intelligent
-      const lowerMessage = message.toLowerCase();
-      let action = "none";
-      let responseText = botResponse;
-
-      if (
-        lowerMessage.includes("restaurant") ||
-        lowerMessage.includes("manger") ||
-        lowerMessage.includes("resto")
-      ) {
-        action = "filter_restaurants";
-      } else if (
-        lowerMessage.includes("itinéraire") ||
-        lowerMessage.includes("chemin") ||
-        lowerMessage.includes("route")
-      ) {
-        action = "show_route";
-      }
-
-      res.json({
-        response: responseText,
-        action: action,
-        targetId: null,
-      });
-    }
-  } catch (error) {
-    console.error("❌ Erreur OpenAI:", error);
-
+    res.json({
+      response: reponseBot,
+      action: "none",
+      targetId: null,
+    });
+  } catch (erreur) {
+    console.error("Erreur OpenAI:", erreur);
     res.status(500).json({
-      response:
-        "Désolé, je rencontre des difficultés techniques. Pouvez-vous réessayer ?",
+      response: "Désolé, service temporairement indisponible.",
       action: "none",
       targetId: null,
     });
   }
 });
 
-// Route de test OpenAI
-app.get("/api/test-openai", async (req, res) => {
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "user",
-          content: "Dis bonjour en français",
-        },
-      ],
-      max_tokens: 50,
-    });
-
-    res.json({
-      message: "OpenAI fonctionne! ",
-      response: completion.choices[0].message.content,
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: "OpenAI erreur",
-      details: error.message,
-    });
-  }
-});
-
 // Démarrer le serveur
 app.listen(PORT, () => {
-  console.log(` Server is running on http://localhost:${PORT}`);
-  console.log(` Frontend: http://localhost:${PORT}`);
-  console.log(` API: http://localhost:${PORT}/api`);
-  console.log(` Chat API: http://localhost:${PORT}/api/chat`);
-  console.log(` Health: http://localhost:${PORT}/api/health`);
-  console.log(` Test OpenAI: http://localhost:${PORT}/api/test-openai`);
+  console.log(`Serveur démarré sur http://localhost:${PORT}`);
+  console.log(`Frontend: http://localhost:${PORT}`);
+  console.log(`API Auth: http://localhost:${PORT}/api/auth`);
+  console.log(`Health: http://localhost:${PORT}/api/sante`);
 });

@@ -1,201 +1,272 @@
-// Gestion de l'authentification
+// Gestion de l'authentification avec backend
+const API_URL = "http://localhost:3000/api/auth";
+
 document.addEventListener("DOMContentLoaded", function () {
   // Éléments des modales
-  const loginModal = document.getElementById("login-modal");
-  const registerModal = document.getElementById("register-modal");
+  const modalConnexion = document.getElementById("login-modal");
+  const modalInscription = document.getElementById("register-modal");
 
   // Boutons d'ouverture
-  const mobileAuthBtn = document.getElementById("mobile-auth-btn");
-  const desktopAuthBtn = document.getElementById("desktop-auth-btn");
+  const boutonAuthMobile = document.getElementById("mobile-auth-btn");
+  const boutonAuthDesktop = document.getElementById("desktop-auth-btn");
 
   // Boutons de fermeture
-  const closeLoginModal = document.getElementById("close-login-modal");
-  const closeRegisterModal = document.getElementById("close-register-modal");
+  const fermerModalConnexion = document.getElementById("close-login-modal");
+  const fermerModalInscription = document.getElementById(
+    "close-register-modal"
+  );
 
   // Liens de switch
-  const showRegister = document.getElementById("show-register");
-  const showLogin = document.getElementById("show-login");
+  const afficherInscription = document.getElementById("show-register");
+  const afficherConnexion = document.getElementById("show-login");
 
   // Formulaires
-  const loginForm = document.getElementById("login-form");
-  const registerForm = document.getElementById("register-form");
+  const formulaireConnexion = document.getElementById("login-form");
+  const formulaireInscription = document.getElementById("register-form");
 
   // Profils utilisateur
-  const userProfile = document.getElementById("user-profile");
+  const profilUtilisateur = document.getElementById("user-profile");
 
   // Ouvrir modal de connexion
-  function openLoginModal() {
-    if (loginModal) {
-      loginModal.classList.remove("hidden");
+  function ouvrirModalConnexion() {
+    if (modalConnexion) {
+      modalConnexion.classList.remove("hidden");
     }
   }
 
   // Ouvrir modal d'inscription
-  function openRegisterModal() {
-    if (registerModal) {
-      registerModal.classList.remove("hidden");
+  function ouvrirModalInscription() {
+    if (modalInscription) {
+      modalInscription.classList.remove("hidden");
     }
   }
 
   // Fermer les modales
-  function closeModals() {
-    if (loginModal) loginModal.classList.add("hidden");
-    if (registerModal) registerModal.classList.add("hidden");
+  function fermerModales() {
+    if (modalConnexion) modalConnexion.classList.add("hidden");
+    if (modalInscription) modalInscription.classList.add("hidden");
   }
 
   // Event listeners pour ouvrir
-  if (mobileAuthBtn) {
-    mobileAuthBtn.addEventListener("click", openLoginModal);
+  if (boutonAuthMobile) {
+    boutonAuthMobile.addEventListener("click", ouvrirModalConnexion);
   }
 
-  if (desktopAuthBtn) {
-    desktopAuthBtn.addEventListener("click", openLoginModal);
+  if (boutonAuthDesktop) {
+    boutonAuthDesktop.addEventListener("click", ouvrirModalConnexion);
   }
 
   // Event listeners pour fermer
-  if (closeLoginModal) {
-    closeLoginModal.addEventListener("click", closeModals);
+  if (fermerModalConnexion) {
+    fermerModalConnexion.addEventListener("click", fermerModales);
   }
 
-  if (closeRegisterModal) {
-    closeRegisterModal.addEventListener("click", closeModals);
+  if (fermerModalInscription) {
+    fermerModalInscription.addEventListener("click", fermerModales);
   }
 
   // Switch entre modales
-  if (showRegister) {
-    showRegister.addEventListener("click", function (e) {
+  if (afficherInscription) {
+    afficherInscription.addEventListener("click", function (e) {
       e.preventDefault();
-      if (loginModal) loginModal.classList.add("hidden");
-      if (registerModal) registerModal.classList.remove("hidden");
+      if (modalConnexion) modalConnexion.classList.add("hidden");
+      if (modalInscription) modalInscription.classList.remove("hidden");
     });
   }
 
-  if (showLogin) {
-    showLogin.addEventListener("click", function (e) {
+  if (afficherConnexion) {
+    afficherConnexion.addEventListener("click", function (e) {
       e.preventDefault();
-      if (registerModal) registerModal.classList.add("hidden");
-      if (loginModal) loginModal.classList.remove("hidden");
+      if (modalInscription) modalInscription.classList.add("hidden");
+      if (modalConnexion) modalConnexion.classList.remove("hidden");
     });
   }
 
   // Fermer en cliquant à l'extérieur
-  if (loginModal) {
-    loginModal.addEventListener("click", function (e) {
-      if (e.target === loginModal) {
-        closeModals();
+  if (modalConnexion) {
+    modalConnexion.addEventListener("click", function (e) {
+      if (e.target === modalConnexion) {
+        fermerModales();
       }
     });
   }
 
-  if (registerModal) {
-    registerModal.addEventListener("click", function (e) {
-      if (e.target === registerModal) {
-        closeModals();
+  if (modalInscription) {
+    modalInscription.addEventListener("click", function (e) {
+      if (e.target === modalInscription) {
+        fermerModales();
       }
     });
   }
 
   // Gestion de la connexion
-  if (loginForm) {
-    loginForm.addEventListener("submit", function (e) {
+  if (formulaireConnexion) {
+    formulaireConnexion.addEventListener("submit", async function (e) {
       e.preventDefault();
 
       const email = document.getElementById("login-email").value;
-      const password = document.getElementById("login-password").value;
+      const motDePasse = document.getElementById("login-password").value;
 
-      // TODO: Ajouter vraie logique de connexion avec backend
-      console.log("Connexion:", email);
-      simulateLogin(email);
+      try {
+        const reponse = await fetch(`${API_URL}/connexion`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, motDePasse }),
+        });
+
+        const donnees = await reponse.json();
+
+        if (donnees.succes) {
+          gererConnexionReussie(donnees);
+        } else {
+          afficherNotification(donnees.message, "error");
+        }
+      } catch (erreur) {
+        console.error("Erreur connexion:", erreur);
+        afficherNotification("Erreur de connexion au serveur", "error");
+      }
     });
   }
 
   // Gestion de l'inscription
-  if (registerForm) {
-    registerForm.addEventListener("submit", function (e) {
+  if (formulaireInscription) {
+    formulaireInscription.addEventListener("submit", async function (e) {
       e.preventDefault();
 
       const email = document.getElementById("register-email").value;
-      const password = document.getElementById("register-password").value;
-      const passwordConfirm = document.getElementById(
+      const motDePasse = document.getElementById("register-password").value;
+      const confirmationMotDePasse = document.getElementById(
         "register-password-confirm"
       ).value;
 
-      if (password !== passwordConfirm) {
-        alert("Les mots de passe ne correspondent pas !");
+      if (motDePasse !== confirmationMotDePasse) {
+        afficherNotification(
+          "Les mots de passe ne correspondent pas !",
+          "error"
+        );
         return;
       }
 
-      if (password.length < 6) {
-        alert("Le mot de passe doit contenir au moins 6 caractères");
+      if (motDePasse.length < 5) {
+        afficherNotification(
+          "Le mot de passe doit contenir au moins 5 caractères",
+          "error"
+        );
         return;
       }
 
-      // TODO: Ajouter vraie logique d'inscription avec backend
-      console.log("Inscription:", email);
-      simulateLogin(email);
+      try {
+        const reponse = await fetch(`${API_URL}/inscription`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, motDePasse }),
+        });
+
+        const donnees = await reponse.json();
+
+        if (donnees.succes) {
+          gererConnexionReussie(donnees);
+        } else {
+          afficherNotification(donnees.message, "error");
+        }
+      } catch (erreur) {
+        console.error("Erreur inscription:", erreur);
+        afficherNotification("Erreur de connexion au serveur", "error");
+      }
     });
   }
 
-  function simulateLogin(email) {
-    closeModals();
+  function gererConnexionReussie(donnees) {
+    fermerModales();
 
-    // Cacher les boutons de connexion
-    if (mobileAuthBtn) mobileAuthBtn.classList.add("hidden");
-    if (desktopAuthBtn) desktopAuthBtn.classList.add("hidden");
+    // Sauvegarder le token et les infos utilisateur
+    localStorage.setItem("token", donnees.token);
+    localStorage.setItem("utilisateur", JSON.stringify(donnees.utilisateur));
 
-    // Afficher le profil
-    if (userProfile) {
-      userProfile.classList.remove("hidden");
-      userProfile.classList.add("flex");
+    // Mettre à jour l'interface
+    if (boutonAuthMobile) boutonAuthMobile.classList.add("hidden");
+    if (boutonAuthDesktop) boutonAuthDesktop.classList.add("hidden");
+
+    if (profilUtilisateur) {
+      profilUtilisateur.classList.remove("hidden");
+      profilUtilisateur.classList.add("flex");
 
       // Mettre à jour le nom
-      const userName = document.getElementById("user-name");
-      if (userName) {
-        userName.textContent = email.split("@")[0];
+      const nomUtilisateur = document.getElementById("user-name");
+      if (nomUtilisateur) {
+        nomUtilisateur.textContent =
+          donnees.utilisateur.nom || donnees.utilisateur.email.split("@")[0];
       }
     }
 
-    // Sauvegarder dans localStorage
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("userEmail", email);
-
-    // Afficher notification de succès
-    if (typeof showNotification === "function") {
-      showNotification(" Connexion réussie !", "success");
-    }
+    afficherNotification("Connexion réussie !", "success");
   }
 
   // Vérifier le statut de connexion au chargement
-  function checkLoginStatus() {
-    if (localStorage.getItem("isLoggedIn") === "true") {
-      const email = localStorage.getItem("userEmail") || "Utilisateur";
+  function verifierStatutConnexion() {
+    const token = localStorage.getItem("token");
+    const utilisateurStr = localStorage.getItem("utilisateur");
 
-      if (mobileAuthBtn) mobileAuthBtn.classList.add("hidden");
-      if (desktopAuthBtn) desktopAuthBtn.classList.add("hidden");
+    if (token && utilisateurStr) {
+      try {
+        const utilisateur = JSON.parse(utilisateurStr);
 
-      if (userProfile) {
-        userProfile.classList.remove("hidden");
-        userProfile.classList.add("flex");
+        if (boutonAuthMobile) boutonAuthMobile.classList.add("hidden");
+        if (boutonAuthDesktop) boutonAuthDesktop.classList.add("hidden");
 
-        const userName = document.getElementById("user-name");
-        if (userName) {
-          userName.textContent = email.split("@")[0];
+        if (profilUtilisateur) {
+          profilUtilisateur.classList.remove("hidden");
+          profilUtilisateur.classList.add("flex");
+
+          const nomUtilisateur = document.getElementById("user-name");
+          if (nomUtilisateur) {
+            nomUtilisateur.textContent =
+              utilisateur.nom || utilisateur.email.split("@")[0];
+          }
         }
+      } catch (erreur) {
+        console.error("Erreur parsing utilisateur:", erreur);
+        deconnecter();
       }
     }
   }
 
+  // Déconnexion
+  function deconnecter() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("utilisateur");
+    location.reload();
+  }
+
   // Déconnexion au clic sur le profil
-  if (userProfile) {
-    userProfile.addEventListener("click", function () {
+  if (profilUtilisateur) {
+    profilUtilisateur.addEventListener("click", function () {
       if (confirm("Voulez-vous vous déconnecter ?")) {
-        localStorage.removeItem("isLoggedIn");
-        localStorage.removeItem("userEmail");
-        location.reload();
+        deconnecter();
       }
     });
   }
 
   // Vérifier le statut au chargement
-  checkLoginStatus();
+  verifierStatutConnexion();
 });
+
+// Fonction utilitaire pour les appels API authentifiés
+async function appelApiAuthentifie(url, options = {}) {
+  const token = localStorage.getItem("token");
+
+  const config = {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    ...options,
+  };
+
+  const reponse = await fetch(url, config);
+  return await reponse.json();
+}
