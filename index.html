@@ -44,7 +44,7 @@
           >
             <!-- Localisation -->
             <div
-              class="flex items-center gap-2 px-2 py-2 md:py-1 rounded-lg transition-colors hover:bg-gray-50"
+              class="flex items-center gap-2 px-2 py-2 md:py-1 rounded-lg transition-colors hover:bg-gray-50 cursor-pointer"
               id="location-selector"
             >
               <i class="fa-solid fa-location-dot text-lg text-orange-500"></i>
@@ -57,12 +57,18 @@
             <!-- Formulaire de recherche -->
             <form action="" class="relative flex-1" id="search-form">
               <input
-                class="w-48 border-none outline-0 rounded px-2 md:px-8 py-2 pr-10 bg-transparent text-sm md:text-base"
+                class="w-full border-none outline-0 rounded px-2 md:px-8 py-2 pr-10 bg-transparent text-sm md:text-base"
                 type="text"
-                placeholder="Recherche..."
+                placeholder="Rechercher un restaurant..."
                 id="search-input"
                 name="search"
               />
+              <button
+                type="submit"
+                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-orange-500 hover:text-orange-600 transition-colors"
+              >
+                <i class="fas fa-search"></i>
+              </button>
             </form>
           </div>
         </div>
@@ -255,10 +261,10 @@
       <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 class="text-3xl font-bold text-gray-800">
-            Découvrez autour de vous
+            Découvrez les restaurants autour de vous
           </h2>
           <p class="text-gray-600 mt-1">
-            Restaurants et pharmacies à proximité
+            Restaurants à proximité avec itinéraires
           </p>
         </div>
       </div>
@@ -274,7 +280,7 @@
             <div class="loading-spinner mb-4"></div>
             <p class="text-gray-600 text-center">
               Cliquez sur "votre position" dans le header pour voir les
-              établissements proches
+              restaurants proches
             </p>
           </div>
         </div>
@@ -334,8 +340,7 @@
             >
               <p class="text-sm text-gray-800">
                 Salut ! 👋 Comment puis-je t'aider à te retrouver ? Cherches-tu
-                un restaurant, une pharmacie ou autre chose ? Je suis prêt à
-                t'aider !
+                un restaurant ou autre chose ? Je suis prêt à t'aider !
               </p>
             </div>
             <span class="text-xs text-gray-500 ml-2 mt-1 block"
@@ -373,7 +378,7 @@
             <a href="#" class="text-2xl font-bold text-white">MyAppFood</a>
             <p class="mt-6 text-gray-100">
               est une plateforme innovante qui vous permet de découvrir les
-              meilleurs restaurants et pharmacies autour de vous.
+              meilleurs restaurants autour de vous.
             </p>
           </div>
           <div class="lg:col-span-2 md:col-span-4 col-span-12">
