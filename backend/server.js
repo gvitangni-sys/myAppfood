@@ -1,3 +1,83 @@
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const mongoose = require("mongoose");
+const OpenAI = require("openai");
+require("dotenv").config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Connexion MongoDB SIMPLIFIÉE
+const connectDB = async () => {
+  try {
+    // Seulement se connecter si MONGODB_URI est configuré
+    if (
+      process.env.MONGODB_URI &&
+      !process.env.MONGODB_URI.includes("localhost")
+    ) {
+      await mongoose.connect(process.env.MONGODB_URI);
+      console.log("MongoDB connecté avec succès");
+    } else {
+      console.log("MongoDB non configuré - Mode démo activé");
+      // Ne pas bloquer le serveur si MongoDB n'est pas disponible
+    }
+  } catch (erreur) {
+    console.log("Mode démo activé - MongoDB non disponible");
+  }
+};
+
+connectDB();
+
+// Configuration OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Routes
+const routesAuth = require("./routes/auth");
+app.use("/api/auth", routesAuth);
+
+// Servir les fichiers statiques du frontend
+app.use(express.static(path.join(__dirname, "..")));
+
+// ========== ROUTES API ==========
+
+// Route API de base
+app.get("/api", (req, res) => {
+  res.json({
+    message: "MyAppFood API est opérationnelle!",
+    status: "online",
+    version: "1.0",
+  });
+});
+
+// Route santé
+app.get("/api/sante", (req, res) => {
+  res.json({
+    statut: "OK",
+    message: "MyAppFood API opérationnelle",
+    mongodb:
+      mongoose.connection.readyState === 1
+        ? "Connectée"
+        : "Non configuré - Mode démo",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Route test
+app.get("/api/test", (req, res) => {
+  res.json({
+    message: " Backend MyAppFood fonctionne!",
+    status: "OK",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Route chatbot OpenAI
 app.post("/api/chat", async (req, res) => {
   try {
@@ -83,4 +163,12 @@ app.post("/api/chat", async (req, res) => {
       targetId: null,
     });
   }
+});
+
+// Démarrer le serveur
+app.listen(PORT, () => {
+  console.log(`Serveur démarré sur http://localhost:${PORT}`);
+  console.log(`Frontend: http://localhost:${PORT}`);
+  console.log(`API Auth: http://localhost:${PORT}/api/auth`);
+  console.log(`Health: http://localhost:${PORT}/api/sante`);
 });
