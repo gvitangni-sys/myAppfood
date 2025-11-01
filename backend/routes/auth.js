@@ -15,9 +15,8 @@ const genererToken = (id) => {
 // Inscription
 router.post("/inscription", async (req, res) => {
   try {
-    const { email, motDePasse, nom, prenom, telephone } = req.body;
+    const { email, motDePasse } = req.body;
 
-    // Validation
     if (!email || !motDePasse) {
       return res.status(400).json({
         succes: false,
@@ -25,10 +24,10 @@ router.post("/inscription", async (req, res) => {
       });
     }
 
-    if (motDePasse.length < 5) {
+    if (motDePasse.length < 4) {
       return res.status(400).json({
         succes: false,
-        message: "Le mot de passe doit contenir au moins 5 caractères",
+        message: "Le mot de passe doit contenir au moins 4 caractères",
       });
     }
 
@@ -45,7 +44,7 @@ router.post("/inscription", async (req, res) => {
     const nouvelUtilisateur = new Utilisateur({
       email,
       motDePasse,
-      nom: nom || "",
+      nom: email.split("@")[0], // Nom basé sur l'email
     });
 
     await nouvelUtilisateur.save();
@@ -77,7 +76,6 @@ router.post("/connexion", async (req, res) => {
   try {
     const { email, motDePasse } = req.body;
 
-    // Validation
     if (!email || !motDePasse) {
       return res.status(400).json({
         succes: false,
@@ -121,22 +119,6 @@ router.post("/connexion", async (req, res) => {
     res.status(500).json({
       succes: false,
       message: "Erreur lors de la connexion",
-    });
-  }
-});
-
-// Profil utilisateur
-router.get("/profil", verifierAuth, async (req, res) => {
-  try {
-    res.json({
-      succes: true,
-      utilisateur: req.utilisateur,
-    });
-  } catch (erreur) {
-    console.error("Erreur profil:", erreur);
-    res.status(500).json({
-      succes: false,
-      message: "Erreur lors de la récupération du profil",
     });
   }
 });
