@@ -79,7 +79,11 @@ function mettreAJourAffichagePosition(nomVille) {
 function afficherNotification(message, type = "info") {
   const notification = document.createElement("div");
   notification.className = `fixed top-24 right-6 z-50 px-6 py-4 rounded-lg shadow-xl transform transition-all duration-300 translate-x-full ${
-    type === "success" ? "bg-green-500" : "bg-orange-500"
+    type === "success"
+      ? "bg-green-500"
+      : type === "error"
+      ? "bg-red-500"
+      : "bg-orange-500"
   } text-white font-medium`;
   notification.textContent = message;
 
@@ -192,6 +196,42 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(carte);
 
 // ========================================
+// FONCTION POUR OBTENIR L'IMAGE DU RESTAURANT
+// ========================================
+
+function obtenirImageRestaurant(restaurant) {
+  // Si le restaurant a une image dans les tags
+  if (restaurant.tags && restaurant.tags.image) {
+    return restaurant.tags.image;
+  }
+
+  // Si le restaurant a un Wikimedia Commons
+  if (restaurant.tags && restaurant.tags["wikimedia_commons"]) {
+    return `https://commons.wikimedia.org/wiki/Special:FilePath/${restaurant.tags["wikimedia_commons"]}`;
+  }
+
+  // Sinon, utiliser une image par défaut selon le type de cuisine
+  const cuisine = restaurant.description?.toLowerCase() || "";
+
+  if (cuisine.includes("fast_food") || cuisine.includes("burger")) {
+    return "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400";
+  } else if (cuisine.includes("pizza")) {
+    return "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400";
+  } else if (
+    cuisine.includes("asian") ||
+    cuisine.includes("chinese") ||
+    cuisine.includes("japonaise")
+  ) {
+    return "https://images.unsplash.com/photo-1562967914-608f82629710?w=400";
+  } else if (cuisine.includes("cafe") || cuisine.includes("coffee")) {
+    return "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400";
+  } else {
+    // Image par défaut générique pour restaurant
+    return "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400";
+  }
+}
+
+// ========================================
 // CHARGEMENT DES RESTAURANTS
 // ========================================
 
@@ -200,23 +240,23 @@ async function chargerRestaurantsReels(lat, lng, rayon = 5000) {
   const messageChargement = document.getElementById("loading-message");
 
   messageChargement.innerHTML = `
-        <div class="flex flex-col items-center justify-center py-20">
-            <div class="loading-spinner mb-4"></div>
-            <p class="text-gray-600 text-center">Recherche des restaurants à proximité...</p>
-        </div>
-    `;
+    <div class="flex flex-col items-center justify-center py-20">
+      <div class="loading-spinner mb-4"></div>
+      <p class="text-gray-600 text-center">Recherche des restaurants à proximité...</p>
+    </div>
+  `;
   messageChargement.classList.remove("hidden");
 
   try {
     const requeteOverpass = `
-            [out:json][timeout:25];
-            (
-                node["amenity"="restaurant"](around:${rayon},${lat},${lng});
-                node["amenity"="fast_food"](around:${rayon},${lat},${lng});
-                node["amenity"="cafe"](around:${rayon},${lat},${lng});
-            );
-            out body;
-        `;
+      [out:json][timeout:25];
+      (
+        node["amenity"="restaurant"](around:${rayon},${lat},${lng});
+        node["amenity"="fast_food"](around:${rayon},${lat},${lng});
+        node["amenity"="cafe"](around:${rayon},${lat},${lng});
+      );
+      out body;
+    `;
 
     const reponse = await fetch("https://overpass-api.de/api/interpreter", {
       method: "POST",
@@ -227,17 +267,25 @@ async function chargerRestaurantsReels(lat, lng, rayon = 5000) {
 
     restaurants = donnees.elements.map((element, index) => {
       const nom = element.tags.name || "Restaurant";
+      const type = element.tags.amenity || "restaurant";
 
       return {
         id: element.id || index,
         nom: nom,
-        type: "restaurant",
+        type: type,
         lat: element.lat,
         lng: element.lon,
-        image:
-          "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400",
+        tags: element.tags, // Garder tous les tags pour l'image
+        image: obtenirImageRestaurant({
+          tags: element.tags,
+          description: element.tags.cuisine || type,
+        }),
         description: element.tags.cuisine
           ? `Cuisine: ${element.tags.cuisine}`
+          : type === "fast_food"
+          ? "Fast food"
+          : type === "cafe"
+          ? "Café"
           : "Restaurant local",
         statut: element.tags.opening_hours || "Horaires non disponibles",
         estOuvert: true,
@@ -246,34 +294,36 @@ async function chargerRestaurantsReels(lat, lng, rayon = 5000) {
           element.tags.phone ||
           element.tags["contact:phone"] ||
           "Non disponible",
-        adresse: element.tags["addr:street"] || "",
+        adresse: element.tags["addr:street"] || element.tags["addr:city"] || "",
       };
     });
 
-    console.log(`${restaurants.length} restaurants trouvés via Overpass API`);
+    console.log(
+      `✅ ${restaurants.length} restaurants trouvés via Overpass API`
+    );
 
     if (restaurants.length === 0) {
       messageChargement.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-20">
-                    <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
-                    <p class="text-gray-600 text-center">Aucun restaurant trouvé dans cette zone.</p>
-                    <p class="text-gray-500 text-sm text-center mt-2">Essayez de zoomer sur une autre zone ou augmentez le rayon de recherche.</p>
-                </div>
-            `;
+        <div class="flex flex-col items-center justify-center py-20">
+          <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
+          <p class="text-gray-600 text-center">Aucun restaurant trouvé dans cette zone.</p>
+          <p class="text-gray-500 text-sm text-center mt-2">Essayez de zoomer sur une autre zone ou augmentez le rayon de recherche.</p>
+        </div>
+      `;
     } else {
       afficherRestaurants();
     }
   } catch (erreur) {
-    console.error("Erreur lors du chargement des données:", erreur);
+    console.error("❌ Erreur lors du chargement des données:", erreur);
     messageChargement.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-20">
-                <i class="fas fa-exclamation-triangle text-red-500 text-5xl mb-4"></i>
-                <p class="text-gray-600 text-center">Erreur lors du chargement des données.</p>
-                <button onclick="chargerRestaurantsReels(${lat}, ${lng})" class="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
-                    Réessayer
-                </button>
-            </div>
-        `;
+      <div class="flex flex-col items-center justify-center py-20">
+        <i class="fas fa-exclamation-triangle text-red-500 text-5xl mb-4"></i>
+        <p class="text-gray-600 text-center">Erreur lors du chargement des données.</p>
+        <button onclick="chargerRestaurantsReels(${lat}, ${lng})" class="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+          Réessayer
+        </button>
+      </div>
+    `;
   }
 }
 
@@ -303,7 +353,7 @@ function creerIconePersonnalisee() {
 }
 
 // ========================================
-// SYSTÈME DE RECHERCHE DE RESTAURANTS
+// SYSTÈME DE RECHERCHE DE RESTAURANTS (CORRIGÉ)
 // ========================================
 
 const formulaireRecherche = document.getElementById("search-form");
@@ -316,7 +366,10 @@ formulaireRecherche.addEventListener("submit", function (e) {
 
 champRecherche.addEventListener("input", function () {
   if (this.value.trim() === "") {
-    afficherRestaurants();
+    // Réafficher tous les restaurants si le champ est vide
+    if (positionActuelle && restaurants.length > 0) {
+      afficherRestaurants();
+    }
   }
 });
 
@@ -324,11 +377,14 @@ function executerRecherche() {
   const termeRecherche = champRecherche.value.trim().toLowerCase();
 
   if (!termeRecherche) {
-    afficherRestaurants();
+    if (positionActuelle && restaurants.length > 0) {
+      afficherRestaurants();
+    }
     return;
   }
 
-  if (!positionActuelle || restaurants.length === 0) {
+  // Vérifier si la localisation est activée
+  if (!positionActuelle) {
     afficherNotification(
       "Veuillez d'abord activer votre localisation",
       "error"
@@ -336,29 +392,39 @@ function executerRecherche() {
     return;
   }
 
-  const restaurantsFiltres = restaurants.filter((restaurant) => {
-    const texteRecherche = `
-            ${restaurant.nom || ""} 
-            ${restaurant.description || ""} 
-            ${restaurant.adresse || ""}
-        `.toLowerCase();
+  // Vérifier si des restaurants sont chargés
+  if (restaurants.length === 0) {
+    afficherNotification(
+      "Aucun restaurant chargé. Activez votre localisation d'abord.",
+      "error"
+    );
+    return;
+  }
 
-    return texteRecherche.includes(termeRecherche);
+  // FILTRER les restaurants DÉJÀ CHARGÉS
+  const restaurantsFiltres = restaurants.filter((restaurant) => {
+    const nom = (restaurant.nom || "").toLowerCase();
+    const description = (restaurant.description || "").toLowerCase();
+    const adresse = (restaurant.adresse || "").toLowerCase();
+
+    return (
+      nom.includes(termeRecherche) ||
+      description.includes(termeRecherche) ||
+      adresse.includes(termeRecherche)
+    );
   });
 
   if (restaurantsFiltres.length === 0) {
     const listeRestaurants = document.getElementById("places-list");
     listeRestaurants.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-20">
-                <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
-                <p class="text-gray-600 text-center">Aucun restaurant trouvé pour "${termeRecherche}"</p>
-                <button onclick="document.getElementById('search-input').value=''; executerRecherche();" 
-                        class="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
-                    Voir tous les restaurants
-                </button>
-            </div>
-        `;
+      <div class="flex flex-col items-center justify-center py-20">
+        <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
+        <p class="text-gray-600 text-center font-semibold mb-2">Aucun restaurant trouvé pour "${termeRecherche}"</p>
+        <p class="text-gray-500 text-sm text-center mb-4">Ce restaurant n'est pas dans la zone actuelle.</p>
+      </div>
+    `;
 
+    // Effacer les marqueurs
     marqueurs.forEach((marqueur) => carte.removeLayer(marqueur));
     marqueurs = [];
 
@@ -369,6 +435,11 @@ function executerRecherche() {
       `${restaurantsFiltres.length} restaurant(s) trouvé(s)`,
       "success"
     );
+
+    // Centrer sur le premier résultat
+    if (restaurantsFiltres.length > 0) {
+      setTimeout(() => centrerSurRestaurant(restaurantsFiltres[0].id), 500);
+    }
   }
 }
 
@@ -401,48 +472,48 @@ function afficherRestaurants(restaurantsPersonnalises = null) {
   restaurantsFiltres.forEach((restaurant) => {
     const carteRestaurant = document.createElement("div");
     carteRestaurant.className =
-      "place-card bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 mb-4";
+      "place-card bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 mb-4 cursor-pointer";
     carteRestaurant.id = `restaurant-${restaurant.id}`;
 
     const etoiles = "★".repeat(Math.floor(restaurant.note));
     carteRestaurant.innerHTML = `
-            <div class="flex">
-                <div class="w-1/3 flex-shrink-0">
-                    <img src="${restaurant.image}" alt="${
-      restaurant.nom
-    }" class="w-full h-full object-cover rounded-l-2xl">
-                </div>
-                <div class="w-2/3 p-4 flex flex-col">
-                    <div class="flex items-start justify-between mb-2">
-                        <h4 class="text-lg font-semibold text-gray-800">${
-                          restaurant.nom
-                        }</h4>
-                        <span class="text-xl">🍽️</span>
-                    </div>
-                    <div class="flex items-center gap-2 mb-2 flex-wrap">
-                        <p class="text-gray-600 text-sm">${restaurant.distance.toFixed(
-                          1
-                        )} km</p>
-                        <span class="${
-                          restaurant.estOuvert ? "bg-green-400" : "bg-red-400"
-                        } text-white px-2 py-1 rounded-full text-xs font-medium">
-                            ${restaurant.statut}
-                        </span>
-                    </div>
-                    <div class="text-sm text-gray-600 mb-2">${etoiles} ${
+      <div class="flex">
+        <div class="w-1/3 flex-shrink-0">
+          <img src="${restaurant.image}" 
+               alt="${restaurant.nom}" 
+               class="w-full h-full object-cover rounded-l-2xl"
+               onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400'">
+        </div>
+        <div class="w-2/3 p-4 flex flex-col">
+          <div class="flex items-start justify-between mb-2">
+            <h4 class="text-lg font-semibold text-gray-800">${
+              restaurant.nom
+            }</h4>
+            <span class="text-xl">🍽️</span>
+          </div>
+          <div class="flex items-center gap-2 mb-2 flex-wrap">
+            <p class="text-gray-600 text-sm">📍 ${restaurant.distance.toFixed(
+              1
+            )} km</p>
+            <span class="${
+              restaurant.estOuvert ? "bg-green-400" : "bg-red-400"
+            } text-white px-2 py-1 rounded-full text-xs font-medium">
+              ${restaurant.statut}
+            </span>
+          </div>
+          <div class="text-sm text-gray-600 mb-2">${etoiles} ${
       restaurant.note
     }</div>
-                    <p class="text-gray-500 text-sm mb-3 line-clamp-2">${
-                      restaurant.description
-                    }</p>
-                    <button onclick="afficherItineraire(${
-                      restaurant.id
-                    })" class="mt-auto bg-orange-500 rounded-lg px-4 py-2 text-white text-sm font-bold hover:bg-orange-600 transition-all duration-200">
-                        <i class="fas fa-route mr-2"></i>Voir itinéraire
-                    </button>
-                </div>
-            </div>
-        `;
+          <p class="text-gray-500 text-sm mb-3 line-clamp-2">${
+            restaurant.description
+          }</p>
+          <button onclick="afficherItineraire(${restaurant.id})" 
+                  class="mt-auto bg-orange-500 rounded-lg px-4 py-2 text-white text-sm font-bold hover:bg-orange-600 transition-all duration-200 shadow-md">
+            <i class="fas fa-route mr-2"></i>Voir itinéraire
+          </button>
+        </div>
+      </div>
+    `;
 
     carteRestaurant.addEventListener("click", (e) => {
       if (!e.target.closest("button")) {
@@ -467,18 +538,17 @@ function ajouterMarqueursCarte(restaurantsFiltres) {
     }).addTo(carte);
 
     marqueur.bindPopup(`
-            <div class="p-3">
-                <h5 class="font-bold text-gray-800 mb-2">${restaurant.nom}</h5>
-                <p class="text-sm text-gray-600 mb-2">${restaurant.distance.toFixed(
-                  1
-                )} km de vous</p>
-                <button onclick="centrerSurRestaurant(${
-                  restaurant.id
-                })" class="w-full bg-orange-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-orange-600 transition-colors">
-                    Voir détails
-                </button>
-            </div>
-        `);
+      <div class="p-3">
+        <h5 class="font-bold text-gray-800 mb-2">${restaurant.nom}</h5>
+        <p class="text-sm text-gray-600 mb-2">📍 ${restaurant.distance.toFixed(
+          1
+        )} km de vous</p>
+        <button onclick="centrerSurRestaurant(${restaurant.id})" 
+                class="w-full bg-orange-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-orange-600 transition-colors">
+          Voir détails
+        </button>
+      </div>
+    `);
 
     marqueur.on("click", () => {
       centrerSurRestaurant(restaurant.id);
@@ -551,12 +621,12 @@ async function afficherItineraire(restaurantId) {
         .setLatLng([restaurant.lat, restaurant.lng])
         .setContent(
           `
-                    <div class="p-3 text-center">
-                        <h5 class="font-bold text-gray-800 mb-2">${restaurant.nom}</h5>
-                        <p class="text-sm text-gray-600"><i class="fas fa-route text-orange-500"></i> ${distance} km</p>
-                        <p class="text-sm text-gray-600"><i class="fas fa-clock text-orange-500"></i> ${duree} min</p>
-                    </div>
-                `
+          <div class="p-3 text-center">
+            <h5 class="font-bold text-gray-800 mb-2">${restaurant.nom}</h5>
+            <p class="text-sm text-gray-600"><i class="fas fa-route text-orange-500"></i> ${distance} km</p>
+            <p class="text-sm text-gray-600"><i class="fas fa-clock text-orange-500"></i> ${duree} min</p>
+          </div>
+        `
         )
         .openOn(carte);
     }
@@ -634,7 +704,17 @@ function obtenirReponseIntelligente(messageUtilisateur) {
       return "Pour voir les restaurants, veuillez d'abord activer votre localisation en cliquant sur 'Votre position' en haut de la page.";
     }
 
-    const plusProche = restaurants.sort((a, b) => a.distance - b.distance)[0];
+    const plusProche = [...restaurants]
+      .map((r) => ({
+        ...r,
+        distance: calculerDistance(
+          positionActuelle.lat,
+          positionActuelle.lng,
+          r.lat,
+          r.lng
+        ),
+      }))
+      .sort((a, b) => a.distance - b.distance)[0];
     setTimeout(() => centrerSurRestaurant(plusProche.id), 500);
 
     return `J'ai trouvé ${
@@ -650,7 +730,17 @@ function obtenirReponseIntelligente(messageUtilisateur) {
     message.includes("route")
   ) {
     if (restaurants.length > 0) {
-      const plusProche = restaurants.sort((a, b) => a.distance - b.distance)[0];
+      const plusProche = [...restaurants]
+        .map((r) => ({
+          ...r,
+          distance: calculerDistance(
+            positionActuelle.lat,
+            positionActuelle.lng,
+            r.lat,
+            r.lng
+          ),
+        }))
+        .sort((a, b) => a.distance - b.distance)[0];
       setTimeout(() => afficherItineraire(plusProche.id), 500);
 
       return `Je calcule l'itinéraire vers "${plusProche.nom}"... Regardez la carte !`;
@@ -679,12 +769,12 @@ formulaireChat.addEventListener("submit", async (e) => {
     messageUtilisateur.className =
       "flex gap-2 items-start justify-end message-bubble";
     messageUtilisateur.innerHTML = `
-            <div class="flex-1 flex justify-end">
-                <div class="bg-orange-500 rounded-2xl rounded-tr-sm shadow-sm p-3 max-w-[85%]">
-                    <p class="text-sm text-white">${message}</p>
-                </div>
-            </div>
-        `;
+      <div class="flex-1 flex justify-end">
+        <div class="bg-orange-500 rounded-2xl rounded-tr-sm shadow-sm p-3 max-w-[85%]">
+          <p class="text-sm text-white">${message}</p>
+        </div>
+      </div>
+    `;
     messagesChat.appendChild(messageUtilisateur);
     champMessage.value = "";
     messagesChat.scrollTop = messagesChat.scrollHeight;
@@ -693,17 +783,17 @@ formulaireChat.addEventListener("submit", async (e) => {
     const indicateurFrappe = document.createElement("div");
     indicateurFrappe.className = "flex gap-2 items-start message-bubble";
     indicateurFrappe.innerHTML = `
-            <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-robot text-white text-sm"></i>
-            </div>
-            <div class="bg-white rounded-2xl rounded-tl-sm shadow-sm p-3">
-                <div class="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </div>
-        `;
+      <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-robot text-white text-sm"></i>
+      </div>
+      <div class="bg-white rounded-2xl rounded-tl-sm shadow-sm p-3">
+        <div class="typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    `;
     messagesChat.appendChild(indicateurFrappe);
     messagesChat.scrollTop = messagesChat.scrollHeight;
 
@@ -715,16 +805,16 @@ formulaireChat.addEventListener("submit", async (e) => {
       const messageBot = document.createElement("div");
       messageBot.className = "flex gap-2 items-start message-bubble";
       messageBot.innerHTML = `
-                <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-robot text-white text-sm"></i>
-                </div>
-                <div class="flex-1">
-                    <div class="bg-white rounded-2xl rounded-tl-sm shadow-sm p-3 max-w-[85%]">
-                        <p class="text-sm text-gray-800">${reponse}</p>
-                    </div>
-                    <span class="text-xs text-gray-500 ml-2 mt-1 block">Maintenant</span>
-                </div>
-            `;
+        <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+          <i class="fas fa-robot text-white text-sm"></i>
+        </div>
+        <div class="flex-1">
+          <div class="bg-white rounded-2xl rounded-tl-sm shadow-sm p-3 max-w-[85%]">
+            <p class="text-sm text-gray-800">${reponse}</p>
+          </div>
+          <span class="text-xs text-gray-500 ml-2 mt-1 block">Maintenant</span>
+        </div>
+      `;
       messagesChat.appendChild(messageBot);
       messagesChat.scrollTop = messagesChat.scrollHeight;
     }, 1500);

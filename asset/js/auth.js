@@ -1,4 +1,4 @@
-// Gestion de l'authentification avec backend MongoDB
+// Gestion de l'authentification avec backend
 const API_URL = "https://myappfood-backend.onrender.com/api/auth";
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -24,11 +24,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const formulaireConnexion = document.getElementById("login-form");
   const formulaireInscription = document.getElementById("register-form");
 
-  // Profils utilisateur (DESKTOP ET MOBILE)
+  // Profils utilisateur
   const profilUtilisateur = document.getElementById("user-profile");
-  const profilUtilisateurMobile = document.getElementById(
-    "user-profile-mobile"
-  );
 
   // Ouvrir modal de connexion
   function ouvrirModalConnexion() {
@@ -190,36 +187,23 @@ document.addEventListener("DOMContentLoaded", function () {
     localStorage.setItem("token", donnees.token);
     localStorage.setItem("utilisateur", JSON.stringify(donnees.utilisateur));
 
-    const nomUtilisateur =
-      donnees.utilisateur.nom || donnees.utilisateur.email.split("@")[0];
-
-    // Cacher les boutons de connexion
+    // Mettre à jour l'interface
     if (boutonAuthMobile) boutonAuthMobile.classList.add("hidden");
     if (boutonAuthDesktop) boutonAuthDesktop.classList.add("hidden");
 
-    // Afficher le profil DESKTOP
     if (profilUtilisateur) {
       profilUtilisateur.classList.remove("hidden");
       profilUtilisateur.classList.add("flex");
 
-      const nomUtilisateurDesktop = document.getElementById("user-name");
-      if (nomUtilisateurDesktop) {
-        nomUtilisateurDesktop.textContent = nomUtilisateur;
+      // Mettre à jour le nom
+      const nomUtilisateur = document.getElementById("user-name");
+      if (nomUtilisateur) {
+        nomUtilisateur.textContent =
+          donnees.utilisateur.nom || donnees.utilisateur.email.split("@")[0];
       }
     }
 
-    // Afficher le profil MOBILE
-    if (profilUtilisateurMobile) {
-      profilUtilisateurMobile.classList.remove("hidden");
-      profilUtilisateurMobile.classList.add("flex");
-
-      const nomUtilisateurMobile = document.getElementById("user-name-mobile");
-      if (nomUtilisateurMobile) {
-        nomUtilisateurMobile.textContent = nomUtilisateur;
-      }
-    }
-
-    afficherNotification(" Connexion réussie !", "success");
+    afficherNotification("Connexion réussie !", "success");
   }
 
   // Vérifier le statut de connexion au chargement
@@ -230,33 +214,18 @@ document.addEventListener("DOMContentLoaded", function () {
     if (token && utilisateurStr) {
       try {
         const utilisateur = JSON.parse(utilisateurStr);
-        const nomUtilisateur =
-          utilisateur.nom || utilisateur.email.split("@")[0];
 
-        // Cacher les boutons de connexion
         if (boutonAuthMobile) boutonAuthMobile.classList.add("hidden");
         if (boutonAuthDesktop) boutonAuthDesktop.classList.add("hidden");
 
-        // Afficher le profil DESKTOP
         if (profilUtilisateur) {
           profilUtilisateur.classList.remove("hidden");
           profilUtilisateur.classList.add("flex");
 
-          const nomUtilisateurDesktop = document.getElementById("user-name");
-          if (nomUtilisateurDesktop) {
-            nomUtilisateurDesktop.textContent = nomUtilisateur;
-          }
-        }
-
-        // Afficher le profil MOBILE
-        if (profilUtilisateurMobile) {
-          profilUtilisateurMobile.classList.remove("hidden");
-          profilUtilisateurMobile.classList.add("flex");
-
-          const nomUtilisateurMobile =
-            document.getElementById("user-name-mobile");
-          if (nomUtilisateurMobile) {
-            nomUtilisateurMobile.textContent = nomUtilisateur;
+          const nomUtilisateur = document.getElementById("user-name");
+          if (nomUtilisateur) {
+            nomUtilisateur.textContent =
+              utilisateur.nom || utilisateur.email.split("@")[0];
           }
         }
       } catch (erreur) {
@@ -273,18 +242,9 @@ document.addEventListener("DOMContentLoaded", function () {
     location.reload();
   }
 
-  // Déconnexion au clic sur le profil DESKTOP
+  // Déconnexion au clic sur le profil
   if (profilUtilisateur) {
     profilUtilisateur.addEventListener("click", function () {
-      if (confirm("Voulez-vous vous déconnecter ?")) {
-        deconnecter();
-      }
-    });
-  }
-
-  // Déconnexion au clic sur le profil MOBILE
-  if (profilUtilisateurMobile) {
-    profilUtilisateurMobile.addEventListener("click", function () {
       if (confirm("Voulez-vous vous déconnecter ?")) {
         deconnecter();
       }
@@ -294,34 +254,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // Vérifier le statut au chargement
   verifierStatutConnexion();
 });
-
-// Fonction d'affichage des notifications (doit exister dans index.js)
-function afficherNotification(message, type = "info") {
-  // Si la fonction showNotification existe dans index.js, l'utiliser
-  if (typeof showNotification === "function") {
-    showNotification(message, type);
-  } else {
-    // Sinon, créer une version basique
-    const notification = document.createElement("div");
-    notification.className = `fixed top-24 right-6 z-50 px-6 py-4 rounded-lg shadow-xl transform transition-all duration-300 translate-x-full ${
-      type === "success" ? "bg-green-500" : "bg-red-500"
-    } text-white font-medium`;
-    notification.textContent = message;
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-      notification.style.transform = "translateX(0)";
-    }, 100);
-
-    setTimeout(() => {
-      notification.style.transform = "translateX(150%)";
-      setTimeout(() => {
-        document.body.removeChild(notification);
-      }, 300);
-    }, 3000);
-  }
-}
 
 // Fonction utilitaire pour les appels API authentifiés
 async function appelApiAuthentifie(url, options = {}) {
