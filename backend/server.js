@@ -22,15 +22,30 @@ mongoose
     console.error("Erreur de connexion a MongoDB:", err.message);
   });
 
-// Import des routes
+// Import ABSOLU des routes (chemins complets)
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
 
-// Montage des routes - AVANT les fichiers statiques
+// Montage des routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 
-// Routes de test
+// Route de test pour vérifier que les routes sont montées
+app.get("/api/routes-test", (req, res) => {
+  res.json({
+    succes: true,
+    message: "Routes API test",
+    routes: [
+      "POST /api/auth/inscription",
+      "POST /api/auth/connexion",
+      "GET /api/auth/profil",
+      "GET /api/admin/statistiques",
+      "GET /api/admin/utilisateurs",
+    ],
+  });
+});
+
+// Routes de base
 app.get("/api/test", (req, res) => {
   res.json({
     succes: true,
@@ -49,7 +64,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Servir les fichiers statics - APRÈS les routes API
+// Servir les fichiers statics
 app.use(express.static(path.join(__dirname, "../")));
 
 // Routes pour les pages HTML
@@ -73,13 +88,16 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Server running on port " + PORT);
-  console.log("Routes API disponibles:");
-  console.log("- GET  /api/test");
-  console.log("- GET  /api/health");
-  console.log("- POST /api/auth/inscription");
-  console.log("- POST /api/auth/connexion");
-  console.log("- GET  /api/auth/profil");
-  console.log("- GET  /api/admin/statistiques");
-  console.log("- GET  /api/admin/utilisateurs");
+  console.log("=== SERVEUR DEMARRE ===");
+  console.log("Port: " + PORT);
+  console.log("=== ROUTES DISPONIBLES ===");
+  console.log("GET  /api/test");
+  console.log("GET  /api/health");
+  console.log("GET  /api/routes-test");
+  console.log("POST /api/auth/inscription");
+  console.log("POST /api/auth/connexion");
+  console.log("GET  /api/auth/profil");
+  console.log("GET  /api/admin/statistiques");
+  console.log("GET  /api/admin/utilisateurs");
+  console.log("=== ================= ===");
 });
