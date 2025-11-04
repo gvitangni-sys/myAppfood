@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Mot de passe oublié - MyAppFood</title>
+    <link rel="icon" href="chemin/vers/icone.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.6s ease-out;
+      }
+
+      .success-animation {
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      body {
+        background: linear-gradient(135deg, #fff5f0 0%, #ffffff 100%);
+        min-height: 100vh;
+      }
+    </style>
+  </head>
+  <body class="flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+      <!-- Logo/Header -->
+      <div class="text-center mb-8 fade-in">
+        <a href="index.html" class="inline-block">
+          <h1 class="text-4xl font-bold text-orange-500">MyAppFood</h1>
+        </a>
+        <p class="text-gray-600 mt-2">Réinitialisation de mot de passe</p>
+      </div>
+
+      <!-- Card principale -->
+      <div
+        class="bg-white rounded-2xl shadow-xl p-8 fade-in"
+        style="animation-delay: 0.2s"
+      >
+        <!-- Icône -->
+        <div class="flex justify-center mb-6">
+          <div
+            class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center"
+          >
+            <i class="fas fa-lock text-orange-500 text-3xl"></i>
+          </div>
+        </div>
+
+        <!-- Titre -->
+        <h2
+          class="text-2xl md:text-3xl font-bold text-gray-800 text-center mb-3"
+        >
+          Mot de passe oublié ?
+        </h2>
+        <p class="text-gray-600 text-center mb-8">
+          Entrez votre email pour recevoir un lien de réinitialisation
+        </p>
+
+        <!-- Formulaire -->
+        <form id="reset-form" class="space-y-6">
+          <div>
+            <label
+              for="email"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Adresse email
+            </label>
+            <div class="relative">
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <i class="fas fa-envelope text-gray-400"></i>
+              </div>
+              <input
+                type="email"
+                id="email"
+                required
+                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
+                placeholder="votre@email.com"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+          >
+            <i class="fas fa-paper-plane"></i>
+            <span>Envoyer le lien de réinitialisation</span>
+          </button>
+        </form>
+
+        <!-- Message de succès (caché par défaut) -->
+        <div
+          id="success-message"
+          class="hidden mt-6 p-4 bg-green-100 border border-green-400 rounded-lg"
+        >
+          <div class="flex items-start gap-3">
+            <i class="fas fa-check-circle text-green-500 text-xl mt-0.5"></i>
+            <div>
+              <p class="font-semibold text-green-800">Email envoyé !</p>
+              <p class="text-sm text-green-700 mt-1">
+                Vérifiez votre boîte de réception. Si vous ne recevez pas
+                d'email dans 5 minutes, vérifiez vos spams.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Retour à la connexion -->
+        <div class="mt-6 text-center">
+          <a
+            href="index.html"
+            class="inline-flex items-center gap-2 text-orange-500 hover:text-orange-600 font-medium transition-colors"
+          >
+            <i class="fas fa-arrow-left"></i>
+            <span>Retour à la connexion</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div
+        class="text-center mt-8 text-gray-600 text-sm fade-in"
+        style="animation-delay: 0.4s"
+      >
+        <p>
+          Besoin d'aide ?
+          <a
+            href="mailto:support@myappfood.com"
+            class="text-orange-500 hover:text-orange-600"
+            >Contactez le support</a
+          >
+        </p>
+        <p class="mt-2">&copy; 2025 MyAppFood. Tous droits réservés.</p>
+      </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div
+      id="loading-overlay"
+      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-2xl p-8 flex flex-col items-center gap-4">
+        <div
+          class="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"
+        ></div>
+        <p class="text-gray-700 font-medium">Envoi en cours...</p>
+      </div>
+    </div>
+
+    <script>
+      const resetForm = document.getElementById("reset-form");
+      const emailInput = document.getElementById("email");
+      const successMessage = document.getElementById("success-message");
+      const loadingOverlay = document.getElementById("loading-overlay");
+
+      resetForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const email = emailInput.value.trim();
+
+        if (!email) {
+          alert("Veuillez entrer votre adresse email");
+          return;
+        }
+
+        // Validation email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          alert("Veuillez entrer une adresse email valide");
+          return;
+        }
+
+        // Afficher le loading
+        loadingOverlay.classList.remove("hidden");
+
+        try {
+          const response = await fetch(
+            "https://myappfood-backend.onrender.com/api/reset-password/request",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ email }),
+            }
+          );
+
+          const data = await response.json();
+          loadingOverlay.classList.add("hidden");
+
+          if (data.succes) {
+            // Cacher le formulaire
+            resetForm.classList.add("hidden");
+
+            // Afficher le message de succès
+            successMessage.classList.remove("hidden");
+
+            // Rediriger vers la page de connexion après 5 secondes
+            setTimeout(() => {
+              window.location.href = "index.html";
+            }, 5000);
+          } else {
+            alert(data.message || "Erreur lors de l'envoi de l'email");
+          }
+        } catch (error) {
+          loadingOverlay.classList.add("hidden");
+          console.error("Erreur:", error);
+          alert("Erreur de connexion au serveur");
+        }
+      });
+    </script>
+  </body>
+</html>
