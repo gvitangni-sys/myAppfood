@@ -36,12 +36,15 @@ document.addEventListener("DOMContentLoaded", function () {
   // GESTION DE LA CONNEXION OBLIGATOIRE
   // ========================================
 
+  // Vérifier si l'utilisateur est connecté
   function estConnecte() {
     return localStorage.getItem("token") !== null;
   }
 
+  // Bloquer l'interface si non connecté
   function bloquerInterface() {
     if (!estConnecte()) {
+      // Créer un overlay de blocage
       let overlay = document.getElementById("blocking-overlay");
 
       if (!overlay) {
@@ -52,12 +55,14 @@ document.addEventListener("DOMContentLoaded", function () {
         document.body.appendChild(overlay);
       }
 
+      // Bloquer uniquement le contenu principal (pas les modales)
       const mainContent = document.querySelector("main");
       const header = document.querySelector("header");
 
       if (mainContent) mainContent.style.pointerEvents = "none";
       if (header) header.style.pointerEvents = "none";
 
+      // S'assurer que le modal reste accessible
       if (modalConnexion) {
         modalConnexion.style.pointerEvents = "auto";
         modalConnexion.style.zIndex = "50";
@@ -69,6 +74,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // Débloquer l'interface après connexion
   function debloquerInterface() {
     const overlay = document.getElementById("blocking-overlay");
     if (overlay) {
@@ -82,17 +88,21 @@ document.addEventListener("DOMContentLoaded", function () {
     if (header) header.style.pointerEvents = "auto";
   }
 
+  // Ouvrir le modal de connexion obligatoire
   function ouvrirModalConnexionObligatoire() {
     if (modalConnexion) {
       modalConnexion.classList.remove("hidden");
 
+      // Cacher le bouton de fermeture si non connecté
       if (fermerModalConnexion && !estConnecte()) {
         fermerModalConnexion.classList.add("hidden");
       }
     }
   }
 
+  // Empêcher la fermeture des modales si non connecté
   function configurerFermetureModales() {
+    // Empêcher la fermeture en cliquant à l'extérieur si non connecté
     if (modalConnexion) {
       modalConnexion.addEventListener("click", function (e) {
         if (e.target === modalConnexion && estConnecte()) {
@@ -109,6 +119,7 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
 
+    // Gérer les boutons de fermeture
     if (fermerModalConnexion) {
       fermerModalConnexion.addEventListener("click", function () {
         if (estConnecte()) {
@@ -134,6 +145,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (modalConnexion) {
       modalConnexion.classList.remove("hidden");
 
+      // Réafficher le bouton de fermeture si connecté
       if (fermerModalConnexion && estConnecte()) {
         fermerModalConnexion.classList.remove("hidden");
       }
@@ -147,6 +159,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function fermerModales() {
+    // Ne fermer que si l'utilisateur est connecté
     if (estConnecte()) {
       if (modalConnexion) modalConnexion.classList.add("hidden");
       if (modalInscription) modalInscription.classList.add("hidden");
@@ -165,6 +178,7 @@ document.addEventListener("DOMContentLoaded", function () {
     boutonAuthDesktop.addEventListener("click", ouvrirModalConnexion);
   }
 
+  // Switch entre modales
   if (afficherInscription) {
     afficherInscription.addEventListener("click", function (e) {
       e.preventDefault();
@@ -192,6 +206,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const email = document.getElementById("login-email").value;
       const motDePasse = document.getElementById("login-password").value;
 
+      // Désactiver le bouton de soumission
       const boutonSubmit = formulaireConnexion.querySelector(
         'button[type="submit"]'
       );
@@ -223,6 +238,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("Erreur connexion:", erreur);
         afficherNotification("Erreur de connexion au serveur", "error");
       } finally {
+        // Réactiver le bouton
         if (boutonSubmit) {
           boutonSubmit.disabled = false;
           boutonSubmit.textContent = "Se connecter";
@@ -245,6 +261,7 @@ document.addEventListener("DOMContentLoaded", function () {
         "register-password-confirm"
       ).value;
 
+      // Validation côté client
       if (motDePasse !== confirmationMotDePasse) {
         afficherNotification(
           "Les mots de passe ne correspondent pas !",
@@ -255,12 +272,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (motDePasse.length < 4) {
         afficherNotification(
-          "Le mot de passe doit contenir au moins 4 caracteres",
+          "Le mot de passe doit contenir au moins 4 caractères",
           "error"
         );
         return;
       }
 
+      // Désactiver le bouton de soumission
       const boutonSubmit = formulaireInscription.querySelector(
         'button[type="submit"]'
       );
@@ -292,6 +310,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("Erreur inscription:", erreur);
         afficherNotification("Erreur de connexion au serveur", "error");
       } finally {
+        // Réactiver le bouton
         if (boutonSubmit) {
           boutonSubmit.disabled = false;
           boutonSubmit.textContent = "S'inscrire";
@@ -314,21 +333,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Fermer les modales
     fermerModales();
-
-    // RÉDIRECTION AUTOMATIQUE POUR LES ADMINS
-    if (donnees.utilisateur.role === "admin") {
-      console.log(
-        "Utilisateur admin détecté, redirection vers le dashboard..."
-      );
-      afficherNotification(
-        "Connexion admin réussie ! Redirection...",
-        "success"
-      );
-      setTimeout(() => {
-        window.location.href = "/admin.html";
-      }, 1500);
-      return;
-    }
 
     // Réafficher le bouton de fermeture
     if (fermerModalConnexion) {
@@ -363,11 +367,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    afficherNotification(
-      "Connexion réussie ! Bienvenue " +
-        (donnees.utilisateur.nom || donnees.utilisateur.email.split("@")[0]),
-      "success"
-    );
+    afficherNotification("Connexion réussie ! Bienvenue ", "success");
 
     // Réinitialiser les formulaires
     if (formulaireConnexion) formulaireConnexion.reset();
@@ -487,9 +487,11 @@ document.addEventListener("DOMContentLoaded", function () {
   // ========================================
 
   function afficherNotification(message, type = "info") {
+    // Créer l'élément de notification
     const notification = document.createElement("div");
     notification.className = `fixed top-4 right-4 z-[9999] px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-300 translate-x-full`;
 
+    // Couleurs selon le type
     const couleurs = {
       success: "bg-green-500 text-white",
       error: "bg-red-500 text-white",
@@ -499,6 +501,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     notification.className += ` ${couleurs[type] || couleurs.info}`;
 
+    // Icônes selon le type
     const icones = {
       success: "fa-check-circle",
       error: "fa-exclamation-circle",
@@ -515,10 +518,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.body.appendChild(notification);
 
+    // Animation d'entrée
     setTimeout(() => {
       notification.classList.remove("translate-x-full");
     }, 10);
 
+    // Retirer après 3 secondes
     setTimeout(() => {
       notification.classList.add("translate-x-full");
       setTimeout(() => {
@@ -527,7 +532,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 3000);
   }
 
-  // Exposer la fonction globalement
+  // Exposer la fonction globalement pour être utilisée ailleurs
   window.afficherNotification = afficherNotification;
 
   // ========================================
@@ -559,6 +564,7 @@ async function appelApiAuthentifie(url, options = {}) {
 
   const reponse = await fetch(url, config);
 
+  // Si token invalide (401), déconnecter l'utilisateur
   if (reponse.status === 401) {
     localStorage.removeItem("token");
     localStorage.removeItem("utilisateur");
