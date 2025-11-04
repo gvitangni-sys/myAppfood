@@ -5,14 +5,12 @@ const { verifierAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
-// Générer token JWT
 const genererToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || "30d",
   });
 };
 
-// Inscription
 router.post("/inscription", async (req, res) => {
   try {
     const { email, motDePasse } = req.body;
@@ -27,51 +25,46 @@ router.post("/inscription", async (req, res) => {
     if (motDePasse.length < 4) {
       return res.status(400).json({
         succes: false,
-        message: "Le mot de passe doit contenir au moins 4 caractères",
+        message: "Le mot de passe doit contenir au moins 4 caracteres",
       });
     }
 
-    // Vérifier si l'utilisateur existe déjà
     const utilisateurExistant = await Utilisateur.findOne({ email });
     if (utilisateurExistant) {
       return res.status(400).json({
         succes: false,
-        message: "Un compte avec cet email existe déjà",
+        message: "Un compte avec cet email existe deja",
       });
     }
 
-    // Créer nouvel utilisateur
     const nouvelUtilisateur = new Utilisateur({
       email,
       motDePasse,
-      nom: email.split("@")[0], // Nom basé sur l'email
     });
 
     await nouvelUtilisateur.save();
 
-    // Générer token
     const token = genererToken(nouvelUtilisateur._id);
 
     res.status(201).json({
       succes: true,
-      message: "Compte créé avec succès",
+      message: "Compte cree avec succes",
       token,
       utilisateur: {
         id: nouvelUtilisateur._id,
         email: nouvelUtilisateur.email,
-        nom: nouvelUtilisateur.nom,
+        role: nouvelUtilisateur.role,
       },
     });
   } catch (erreur) {
     console.error("Erreur inscription:", erreur);
     res.status(500).json({
       succes: false,
-      message: "Erreur lors de la création du compte",
+      message: "Erreur lors de la creation du compte",
     });
   }
 });
 
-// Connexion
 router.post("/connexion", async (req, res) => {
   try {
     const { email, motDePasse } = req.body;
@@ -83,7 +76,6 @@ router.post("/connexion", async (req, res) => {
       });
     }
 
-    // Trouver l'utilisateur
     const utilisateur = await Utilisateur.findOne({ email });
     if (!utilisateur) {
       return res.status(401).json({
@@ -92,7 +84,13 @@ router.post("/connexion", async (req, res) => {
       });
     }
 
-    // Vérifier le mot de passe
+    if (utilisateur.statut !== "actif") {
+      return res.status(401).json({
+        succes: false,
+        message: "Votre compte a ete desactive",
+      });
+    }
+
     const motDePasseValide = await utilisateur.comparerMotDePasse(motDePasse);
     if (!motDePasseValide) {
       return res.status(401).json({
@@ -101,17 +99,19 @@ router.post("/connexion", async (req, res) => {
       });
     }
 
-    // Générer token
+    utilisateur.derniereConnexion = new Date();
+    await utilisateur.save();
+
     const token = genererToken(utilisateur._id);
 
     res.json({
       succes: true,
-      message: "Connexion réussie",
+      message: "Connexion reussie",
       token,
       utilisateur: {
         id: utilisateur._id,
         email: utilisateur.email,
-        nom: utilisateur.nom,
+        role: utilisateur.role,
       },
     });
   } catch (erreur) {
@@ -119,6 +119,26 @@ router.post("/connexion", async (req, res) => {
     res.status(500).json({
       succes: false,
       message: "Erreur lors de la connexion",
+    });
+  }
+});
+
+router.get("/profil", verifierAuth, async (req, res) => {
+  try {
+    res.json({
+      succes: true,
+      utilisateur: {
+        id: req.utilisateur._id,
+        email: req.utilisateur.email,
+        role: req.utilisateur.role,
+        dateInscription: req.utilisateur.dateInscription,
+      },
+    });
+  } catch (erreur) {
+    console.error("Erreur profil:", erreur);
+    res.status(500).json({
+      succes: false,
+      message: "Erreur lors de la recuperation du profil",
     });
   }
 });

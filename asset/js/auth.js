@@ -26,6 +26,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Profils utilisateur
   const profilUtilisateur = document.getElementById("user-profile");
+  const profilUtilisateurMobile = document.getElementById(
+    "user-profile-mobile"
+  );
 
   // Ouvrir modal de connexion
   function ouvrirModalConnexion() {
@@ -149,9 +152,9 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      if (motDePasse.length < 5) {
+      if (motDePasse.length < 6) {
         afficherNotification(
-          "Le mot de passe doit contenir au moins 5 caractères",
+          "Le mot de passe doit contenir au moins 6 caractères",
           "error"
         );
         return;
@@ -203,6 +206,19 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
+    // Mettre à jour le profil mobile
+    if (profilUtilisateurMobile) {
+      profilUtilisateurMobile.classList.remove("hidden");
+      profilUtilisateurMobile.classList.add("flex");
+
+      // Mettre à jour le nom mobile
+      const nomUtilisateurMobile = document.getElementById("user-name-mobile");
+      if (nomUtilisateurMobile) {
+        nomUtilisateurMobile.textContent =
+          donnees.utilisateur.nom || donnees.utilisateur.email.split("@")[0];
+      }
+    }
+
     afficherNotification("Connexion réussie !", "success");
   }
 
@@ -228,6 +244,19 @@ document.addEventListener("DOMContentLoaded", function () {
               utilisateur.nom || utilisateur.email.split("@")[0];
           }
         }
+
+        // Vérifier le profil mobile
+        if (profilUtilisateurMobile) {
+          profilUtilisateurMobile.classList.remove("hidden");
+          profilUtilisateurMobile.classList.add("flex");
+
+          const nomUtilisateurMobile =
+            document.getElementById("user-name-mobile");
+          if (nomUtilisateurMobile) {
+            nomUtilisateurMobile.textContent =
+              utilisateur.nom || utilisateur.email.split("@")[0];
+          }
+        }
       } catch (erreur) {
         console.error("Erreur parsing utilisateur:", erreur);
         deconnecter();
@@ -239,12 +268,40 @@ document.addEventListener("DOMContentLoaded", function () {
   function deconnecter() {
     localStorage.removeItem("token");
     localStorage.removeItem("utilisateur");
-    location.reload();
+
+    // Réinitialiser l'interface desktop et mobile
+    if (boutonAuthMobile) boutonAuthMobile.classList.remove("hidden");
+    if (boutonAuthDesktop) boutonAuthDesktop.classList.remove("hidden");
+
+    if (profilUtilisateur) {
+      profilUtilisateur.classList.add("hidden");
+      profilUtilisateur.classList.remove("flex");
+    }
+
+    // Cacher le profil mobile
+    if (profilUtilisateurMobile) {
+      profilUtilisateurMobile.classList.add("hidden");
+      profilUtilisateurMobile.classList.remove("flex");
+    }
+
+    afficherNotification("Déconnexion réussie", "success");
+    setTimeout(() => {
+      location.reload();
+    }, 1000);
   }
 
-  // Déconnexion au clic sur le profil
+  // Déconnexion au clic sur le profil desktop
   if (profilUtilisateur) {
     profilUtilisateur.addEventListener("click", function () {
+      if (confirm("Voulez-vous vous déconnecter ?")) {
+        deconnecter();
+      }
+    });
+  }
+
+  // Déconnexion au clic sur le profil mobile
+  if (profilUtilisateurMobile) {
+    profilUtilisateurMobile.addEventListener("click", function () {
       if (confirm("Voulez-vous vous déconnecter ?")) {
         deconnecter();
       }

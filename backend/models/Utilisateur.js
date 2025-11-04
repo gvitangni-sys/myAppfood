@@ -12,11 +12,27 @@ const utilisateurSchema = new mongoose.Schema({
   motDePasse: {
     type: String,
     required: true,
-    minlength: 6,
+    minlength: 4,
+  },
+  role: {
+    type: String,
+    enum: ["utilisateur", "admin"],
+    default: "utilisateur",
+  },
+  dateInscription: {
+    type: Date,
+    default: Date.now,
+  },
+  derniereConnexion: {
+    type: Date,
+  },
+  statut: {
+    type: String,
+    enum: ["actif", "inactif"],
+    default: "actif",
   },
 });
 
-// Hash du mot de passe avant sauvegarde
 utilisateurSchema.pre("save", async function (next) {
   if (!this.isModified("motDePasse")) return next();
 
@@ -29,7 +45,6 @@ utilisateurSchema.pre("save", async function (next) {
   }
 });
 
-// Méthode pour comparer les mots de passe
 utilisateurSchema.methods.comparerMotDePasse = async function (motDePasse) {
   return await bcrypt.compare(motDePasse, this.motDePasse);
 };

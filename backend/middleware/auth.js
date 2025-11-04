@@ -24,10 +24,17 @@ const verifierAuth = async (req, res, next) => {
       });
     }
 
+    if (utilisateur.statut !== "actif") {
+      return res.status(401).json({
+        succes: false,
+        message: "Compte desactive",
+      });
+    }
+
     req.utilisateur = utilisateur;
     next();
   } catch (erreur) {
-    console.error("Erreur vérification token:", erreur);
+    console.error("Erreur verification token:", erreur);
     res.status(401).json({
       succes: false,
       message: "Token invalide",
@@ -35,4 +42,22 @@ const verifierAuth = async (req, res, next) => {
   }
 };
 
-module.exports = { verifierAuth };
+const verifierAdmin = async (req, res, next) => {
+  try {
+    if (req.utilisateur.role !== "admin") {
+      return res.status(403).json({
+        succes: false,
+        message: "Acces refuse. Droits administrateur requis.",
+      });
+    }
+    next();
+  } catch (erreur) {
+    console.error("Erreur verification admin:", erreur);
+    res.status(500).json({
+      succes: false,
+      message: "Erreur serveur",
+    });
+  }
+};
+
+module.exports = { verifierAuth, verifierAdmin };

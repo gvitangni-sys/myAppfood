@@ -9,6 +9,18 @@ let positionUtilisateur = {
   pays: "",
 };
 
+let carte = L.map("map").setView([6.8775, -6.3585], 13);
+let marqueurUtilisateur = null;
+let positionActuelle = null;
+let marqueurs = [];
+let coucheItineraire = null;
+let restaurants = [];
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "© OpenStreetMap contributors",
+  maxZoom: 19,
+}).addTo(carte);
+
 // Fonction pour obtenir le nom de la ville via géocodage inverse
 async function obtenirNomVille(lat, lng) {
   try {
@@ -180,37 +192,18 @@ document
   });
 
 // ========================================
-// GESTION DE LA CARTE ET DES RESTAURANTS
-// ========================================
-
-let carte = L.map("map").setView([6.8775, -6.3585], 13);
-let marqueurUtilisateur = null;
-let positionActuelle = null;
-let marqueurs = [];
-let coucheItineraire = null;
-let restaurants = [];
-
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution: "© OpenStreetMap contributors",
-  maxZoom: 19,
-}).addTo(carte);
-
-// ========================================
 // FONCTION POUR OBTENIR L'IMAGE DU RESTAURANT
 // ========================================
 
 function obtenirImageRestaurant(restaurant) {
-  // Si le restaurant a une image dans les tags
   if (restaurant.tags && restaurant.tags.image) {
     return restaurant.tags.image;
   }
 
-  // Si le restaurant a un Wikimedia Commons
   if (restaurant.tags && restaurant.tags["wikimedia_commons"]) {
     return `https://commons.wikimedia.org/wiki/Special:FilePath/${restaurant.tags["wikimedia_commons"]}`;
   }
 
-  // Sinon, utiliser une image par défaut selon le type de cuisine
   const cuisine = restaurant.description?.toLowerCase() || "";
 
   if (cuisine.includes("fast_food") || cuisine.includes("burger")) {
@@ -226,7 +219,6 @@ function obtenirImageRestaurant(restaurant) {
   } else if (cuisine.includes("cafe") || cuisine.includes("coffee")) {
     return "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400";
   } else {
-    // Image par défaut générique pour restaurant
     return "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400";
   }
 }
@@ -239,13 +231,15 @@ async function chargerRestaurantsReels(lat, lng, rayon = 5000) {
   const listeRestaurants = document.getElementById("places-list");
   const messageChargement = document.getElementById("loading-message");
 
-  messageChargement.innerHTML = `
-    <div class="flex flex-col items-center justify-center py-20">
-      <div class="loading-spinner mb-4"></div>
-      <p class="text-gray-600 text-center">Recherche des restaurants à proximité...</p>
-    </div>
-  `;
-  messageChargement.classList.remove("hidden");
+  if (messageChargement) {
+    messageChargement.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-20">
+        <div class="loading-spinner mb-4"></div>
+        <p class="text-gray-600 text-center">Recherche des restaurants à proximité...</p>
+      </div>
+    `;
+    messageChargement.classList.remove("hidden");
+  }
 
   try {
     const requeteOverpass = `
@@ -275,7 +269,7 @@ async function chargerRestaurantsReels(lat, lng, rayon = 5000) {
         type: type,
         lat: element.lat,
         lng: element.lon,
-        tags: element.tags, // Garder tous les tags pour l'image
+        tags: element.tags,
         image: obtenirImageRestaurant({
           tags: element.tags,
           description: element.tags.cuisine || type,
@@ -298,32 +292,34 @@ async function chargerRestaurantsReels(lat, lng, rayon = 5000) {
       };
     });
 
-    console.log(
-      `✅ ${restaurants.length} restaurants trouvés via Overpass API`
-    );
+    console.log(`${restaurants.length} restaurants trouvés via Overpass API`);
 
     if (restaurants.length === 0) {
-      messageChargement.innerHTML = `
-        <div class="flex flex-col items-center justify-center py-20">
-          <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
-          <p class="text-gray-600 text-center">Aucun restaurant trouvé dans cette zone.</p>
-          <p class="text-gray-500 text-sm text-center mt-2">Essayez de zoomer sur une autre zone ou augmentez le rayon de recherche.</p>
-        </div>
-      `;
+      if (messageChargement) {
+        messageChargement.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-20">
+            <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
+            <p class="text-gray-600 text-center">Aucun restaurant trouvé dans cette zone.</p>
+            <p class="text-gray-500 text-sm text-center mt-2">Essayez de zoomer sur une autre zone ou augmentez le rayon de recherche.</p>
+          </div>
+        `;
+      }
     } else {
       afficherRestaurants();
     }
   } catch (erreur) {
-    console.error("❌ Erreur lors du chargement des données:", erreur);
-    messageChargement.innerHTML = `
-      <div class="flex flex-col items-center justify-center py-20">
-        <i class="fas fa-exclamation-triangle text-red-500 text-5xl mb-4"></i>
-        <p class="text-gray-600 text-center">Erreur lors du chargement des données.</p>
-        <button onclick="chargerRestaurantsReels(${lat}, ${lng})" class="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
-          Réessayer
-        </button>
-      </div>
-    `;
+    console.error("Erreur lors du chargement des données:", erreur);
+    if (messageChargement) {
+      messageChargement.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-20">
+          <i class="fas fa-exclamation-triangle text-red-500 text-5xl mb-4"></i>
+          <p class="text-gray-600 text-center">Erreur lors du chargement des données.</p>
+          <button onclick="chargerRestaurantsReels(${lat}, ${lng})" class="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+            Réessayer
+          </button>
+        </div>
+      `;
+    }
   }
 }
 
@@ -353,25 +349,28 @@ function creerIconePersonnalisee() {
 }
 
 // ========================================
-// SYSTÈME DE RECHERCHE DE RESTAURANTS (CORRIGÉ)
+// SYSTÈME DE RECHERCHE DE RESTAURANTS
 // ========================================
 
 const formulaireRecherche = document.getElementById("search-form");
 const champRecherche = document.getElementById("search-input");
 
-formulaireRecherche.addEventListener("submit", function (e) {
-  e.preventDefault();
-  executerRecherche();
-});
+if (formulaireRecherche) {
+  formulaireRecherche.addEventListener("submit", function (e) {
+    e.preventDefault();
+    executerRecherche();
+  });
+}
 
-champRecherche.addEventListener("input", function () {
-  if (this.value.trim() === "") {
-    // Réafficher tous les restaurants si le champ est vide
-    if (positionActuelle && restaurants.length > 0) {
-      afficherRestaurants();
+if (champRecherche) {
+  champRecherche.addEventListener("input", function () {
+    if (this.value.trim() === "") {
+      if (positionActuelle && restaurants.length > 0) {
+        afficherRestaurants();
+      }
     }
-  }
-});
+  });
+}
 
 function executerRecherche() {
   const termeRecherche = champRecherche.value.trim().toLowerCase();
@@ -383,7 +382,6 @@ function executerRecherche() {
     return;
   }
 
-  // Vérifier si la localisation est activée
   if (!positionActuelle) {
     afficherNotification(
       "Veuillez d'abord activer votre localisation",
@@ -392,7 +390,6 @@ function executerRecherche() {
     return;
   }
 
-  // Vérifier si des restaurants sont chargés
   if (restaurants.length === 0) {
     afficherNotification(
       "Aucun restaurant chargé. Activez votre localisation d'abord.",
@@ -401,30 +398,36 @@ function executerRecherche() {
     return;
   }
 
-  // FILTRER les restaurants DÉJÀ CHARGÉS
   const restaurantsFiltres = restaurants.filter((restaurant) => {
     const nom = (restaurant.nom || "").toLowerCase();
     const description = (restaurant.description || "").toLowerCase();
     const adresse = (restaurant.adresse || "").toLowerCase();
+    const type = (restaurant.type || "").toLowerCase();
 
     return (
       nom.includes(termeRecherche) ||
       description.includes(termeRecherche) ||
-      adresse.includes(termeRecherche)
+      adresse.includes(termeRecherche) ||
+      type.includes(termeRecherche)
     );
   });
 
   if (restaurantsFiltres.length === 0) {
     const listeRestaurants = document.getElementById("places-list");
-    listeRestaurants.innerHTML = `
-      <div class="flex flex-col items-center justify-center py-20">
-        <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
-        <p class="text-gray-600 text-center font-semibold mb-2">Aucun restaurant trouvé pour "${termeRecherche}"</p>
-        <p class="text-gray-500 text-sm text-center mb-4">Ce restaurant n'est pas dans la zone actuelle.</p>
-      </div>
-    `;
+    if (listeRestaurants) {
+      listeRestaurants.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-20">
+          <i class="fas fa-search text-gray-400 text-5xl mb-4"></i>
+          <p class="text-gray-600 text-center font-semibold mb-2">Aucun restaurant trouvé pour "${termeRecherche}"</p>
+          <p class="text-gray-500 text-sm text-center mb-4">Essayez un autre terme ou vérifiez l'orthographe.</p>
+          <button onclick="document.getElementById('search-input').value = ''; executerRecherche();" 
+                  class="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+            Voir tous les restaurants
+          </button>
+        </div>
+      `;
+    }
 
-    // Effacer les marqueurs
     marqueurs.forEach((marqueur) => carte.removeLayer(marqueur));
     marqueurs = [];
 
@@ -432,32 +435,94 @@ function executerRecherche() {
   } else {
     afficherRestaurants(restaurantsFiltres);
     afficherNotification(
-      `${restaurantsFiltres.length} restaurant(s) trouvé(s)`,
+      `${restaurantsFiltres.length} restaurant(s) trouvé(s) pour "${termeRecherche}"`,
       "success"
     );
 
-    // Centrer sur le premier résultat
     if (restaurantsFiltres.length > 0) {
       setTimeout(() => centrerSurRestaurant(restaurantsFiltres[0].id), 500);
     }
   }
 }
 
+// Fonction utilitaire pour créer les cartes restaurant
+function creerCarteRestaurant(restaurant) {
+  const carteRestaurant = document.createElement("div");
+  carteRestaurant.className =
+    "place-card bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 mb-4 cursor-pointer";
+  carteRestaurant.id = `restaurant-${restaurant.id}`;
+
+  const etoiles = "★".repeat(Math.floor(restaurant.note));
+
+  carteRestaurant.innerHTML = `
+    <div class="flex">
+      <div class="w-1/3 flex-shrink-0">
+        <img src="${restaurant.image}" 
+             alt="${restaurant.nom}" 
+             class="w-full h-full object-cover rounded-l-2xl"
+             onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400'">
+      </div>
+      <div class="w-2/3 p-4 flex flex-col">
+        <div class="flex items-start justify-between mb-2">
+          <h4 class="text-lg font-semibold text-gray-800">${restaurant.nom}</h4>
+          <span class="text-xl">🍽️</span>
+        </div>
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+          <p class="text-gray-600 text-sm">📍 ${restaurant.distance.toFixed(
+            1
+          )} km</p>
+          <span class="${
+            restaurant.estOuvert ? "bg-green-400" : "bg-red-400"
+          } text-white px-2 py-1 rounded-full text-xs font-medium">
+            ${restaurant.statut}
+          </span>
+        </div>
+        <div class="text-sm text-gray-600 mb-2">${etoiles} ${
+    restaurant.note
+  }</div>
+        <p class="text-gray-500 text-sm mb-3 line-clamp-2">${
+          restaurant.description
+        }</p>
+        <button onclick="event.stopPropagation(); afficherItineraire(${
+          restaurant.id
+        })" 
+                class="mt-auto bg-orange-500 rounded-lg px-4 py-2 text-white text-sm font-bold hover:bg-orange-600 transition-all duration-200 shadow-md">
+          <i class="fas fa-route mr-2"></i>Voir itinéraire
+        </button>
+      </div>
+    </div>
+  `;
+
+  carteRestaurant.addEventListener("click", (e) => {
+    if (!e.target.closest("button")) {
+      centrerSurRestaurant(restaurant.id);
+    }
+  });
+
+  return carteRestaurant;
+}
+
 // Afficher les restaurants
-function afficherRestaurants(restaurantsPersonnalises = null) {
+function afficherRestaurants(restaurantsAAfficher = null) {
   const listeRestaurants = document.getElementById("places-list");
   const messageChargement = document.getElementById("loading-message");
 
-  if (!positionActuelle || restaurants.length === 0) {
+  if (!listeRestaurants) return;
+
+  const restaurantsAUtiliser = restaurantsAAfficher || restaurants;
+
+  if (!positionActuelle || restaurantsAUtiliser.length === 0) {
     return;
   }
 
-  messageChargement.classList.add("hidden");
+  // CORRECTION : Vérifier si messageChargement existe avant de l'utiliser
+  if (messageChargement) {
+    messageChargement.classList.add("hidden");
+  }
+
   listeRestaurants.innerHTML = "";
 
-  const restaurantsAAfficher = restaurantsPersonnalises || restaurants;
-
-  const restaurantsFiltres = restaurantsAAfficher
+  const restaurantsAvecDistances = restaurantsAUtiliser
     .map((restaurant) => ({
       ...restaurant,
       distance: calculerDistance(
@@ -469,70 +534,20 @@ function afficherRestaurants(restaurantsPersonnalises = null) {
     }))
     .sort((a, b) => a.distance - b.distance);
 
-  restaurantsFiltres.forEach((restaurant) => {
-    const carteRestaurant = document.createElement("div");
-    carteRestaurant.className =
-      "place-card bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 mb-4 cursor-pointer";
-    carteRestaurant.id = `restaurant-${restaurant.id}`;
-
-    const etoiles = "★".repeat(Math.floor(restaurant.note));
-    carteRestaurant.innerHTML = `
-      <div class="flex">
-        <div class="w-1/3 flex-shrink-0">
-          <img src="${restaurant.image}" 
-               alt="${restaurant.nom}" 
-               class="w-full h-full object-cover rounded-l-2xl"
-               onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400'">
-        </div>
-        <div class="w-2/3 p-4 flex flex-col">
-          <div class="flex items-start justify-between mb-2">
-            <h4 class="text-lg font-semibold text-gray-800">${
-              restaurant.nom
-            }</h4>
-            <span class="text-xl">🍽️</span>
-          </div>
-          <div class="flex items-center gap-2 mb-2 flex-wrap">
-            <p class="text-gray-600 text-sm">📍 ${restaurant.distance.toFixed(
-              1
-            )} km</p>
-            <span class="${
-              restaurant.estOuvert ? "bg-green-400" : "bg-red-400"
-            } text-white px-2 py-1 rounded-full text-xs font-medium">
-              ${restaurant.statut}
-            </span>
-          </div>
-          <div class="text-sm text-gray-600 mb-2">${etoiles} ${
-      restaurant.note
-    }</div>
-          <p class="text-gray-500 text-sm mb-3 line-clamp-2">${
-            restaurant.description
-          }</p>
-          <button onclick="afficherItineraire(${restaurant.id})" 
-                  class="mt-auto bg-orange-500 rounded-lg px-4 py-2 text-white text-sm font-bold hover:bg-orange-600 transition-all duration-200 shadow-md">
-            <i class="fas fa-route mr-2"></i>Voir itinéraire
-          </button>
-        </div>
-      </div>
-    `;
-
-    carteRestaurant.addEventListener("click", (e) => {
-      if (!e.target.closest("button")) {
-        centrerSurRestaurant(restaurant.id);
-      }
-    });
-
+  restaurantsAvecDistances.forEach((restaurant) => {
+    const carteRestaurant = creerCarteRestaurant(restaurant);
     listeRestaurants.appendChild(carteRestaurant);
   });
 
-  ajouterMarqueursCarte(restaurantsFiltres);
+  ajouterMarqueursCarte(restaurantsAvecDistances);
 }
 
 // Ajouter marqueurs sur la carte
-function ajouterMarqueursCarte(restaurantsFiltres) {
+function ajouterMarqueursCarte(restaurantsAffiches) {
   marqueurs.forEach((marqueur) => carte.removeLayer(marqueur));
   marqueurs = [];
 
-  restaurantsFiltres.forEach((restaurant) => {
+  restaurantsAffiches.forEach((restaurant) => {
     const marqueur = L.marker([restaurant.lat, restaurant.lng], {
       icon: creerIconePersonnalisee(),
     }).addTo(carte);
@@ -680,16 +695,20 @@ const formulaireChat = document.getElementById("chat-form");
 const champMessage = document.getElementById("message-input");
 const messagesChat = document.querySelector(".chat-messages");
 
-boutonOuvrirChat.addEventListener("click", () => {
-  chatbot.classList.remove("hidden");
-  boutonOuvrirChat.style.display = "none";
-  champMessage.focus();
-});
+if (boutonOuvrirChat) {
+  boutonOuvrirChat.addEventListener("click", () => {
+    chatbot.classList.remove("hidden");
+    boutonOuvrirChat.style.display = "none";
+    champMessage.focus();
+  });
+}
 
-boutonFermerChat.addEventListener("click", () => {
-  chatbot.classList.add("hidden");
-  boutonOuvrirChat.style.display = "flex";
-});
+if (boutonFermerChat) {
+  boutonFermerChat.addEventListener("click", () => {
+    chatbot.classList.add("hidden");
+    boutonOuvrirChat.style.display = "flex";
+  });
+}
 
 // Fonction de réponse intelligente locale
 function obtenirReponseIntelligente(messageUtilisateur) {
@@ -759,79 +778,83 @@ function obtenirReponseIntelligente(messageUtilisateur) {
   return "Je peux vous aider à trouver des restaurants près de vous et afficher les itinéraires sur la carte. Essayez de me demander : 'Montre-moi les restaurants' ou 'Trouve un restaurant'";
 }
 
-formulaireChat.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const message = champMessage.value.trim();
+if (formulaireChat) {
+  formulaireChat.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = champMessage.value.trim();
 
-  if (message) {
-    // Message utilisateur
-    const messageUtilisateur = document.createElement("div");
-    messageUtilisateur.className =
-      "flex gap-2 items-start justify-end message-bubble";
-    messageUtilisateur.innerHTML = `
-      <div class="flex-1 flex justify-end">
-        <div class="bg-orange-500 rounded-2xl rounded-tr-sm shadow-sm p-3 max-w-[85%]">
-          <p class="text-sm text-white">${message}</p>
+    if (message) {
+      // Message utilisateur
+      const messageUtilisateur = document.createElement("div");
+      messageUtilisateur.className =
+        "flex gap-2 items-start justify-end message-bubble";
+      messageUtilisateur.innerHTML = `
+        <div class="flex-1 flex justify-end">
+          <div class="bg-orange-500 rounded-2xl rounded-tr-sm shadow-sm p-3 max-w-[85%]">
+            <p class="text-sm text-white">${message}</p>
+          </div>
         </div>
-      </div>
-    `;
-    messagesChat.appendChild(messageUtilisateur);
-    champMessage.value = "";
-    messagesChat.scrollTop = messagesChat.scrollHeight;
+      `;
+      messagesChat.appendChild(messageUtilisateur);
+      champMessage.value = "";
+      messagesChat.scrollTop = messagesChat.scrollHeight;
 
-    // Indicateur de frappe
-    const indicateurFrappe = document.createElement("div");
-    indicateurFrappe.className = "flex gap-2 items-start message-bubble";
-    indicateurFrappe.innerHTML = `
-      <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-        <i class="fas fa-robot text-white text-sm"></i>
-      </div>
-      <div class="bg-white rounded-2xl rounded-tl-sm shadow-sm p-3">
-        <div class="typing-indicator">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </div>
-    `;
-    messagesChat.appendChild(indicateurFrappe);
-    messagesChat.scrollTop = messagesChat.scrollHeight;
-
-    // Réponse après délai
-    setTimeout(() => {
-      indicateurFrappe.remove();
-
-      const reponse = obtenirReponseIntelligente(message);
-      const messageBot = document.createElement("div");
-      messageBot.className = "flex gap-2 items-start message-bubble";
-      messageBot.innerHTML = `
+      // Indicateur de frappe
+      const indicateurFrappe = document.createElement("div");
+      indicateurFrappe.className = "flex gap-2 items-start message-bubble";
+      indicateurFrappe.innerHTML = `
         <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
           <i class="fas fa-robot text-white text-sm"></i>
         </div>
-        <div class="flex-1">
-          <div class="bg-white rounded-2xl rounded-tl-sm shadow-sm p-3 max-w-[85%]">
-            <p class="text-sm text-gray-800">${reponse}</p>
+        <div class="bg-white rounded-2xl rounded-tl-sm shadow-sm p-3">
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
           </div>
-          <span class="text-xs text-gray-500 ml-2 mt-1 block">Maintenant</span>
         </div>
       `;
-      messagesChat.appendChild(messageBot);
+      messagesChat.appendChild(indicateurFrappe);
       messagesChat.scrollTop = messagesChat.scrollHeight;
-    }, 1500);
-  }
-});
 
-champMessage.addEventListener("focus", () => {
-  messagesChat.scrollTop = messagesChat.scrollHeight;
-});
+      // Réponse après délai
+      setTimeout(() => {
+        indicateurFrappe.remove();
+
+        const reponse = obtenirReponseIntelligente(message);
+        const messageBot = document.createElement("div");
+        messageBot.className = "flex gap-2 items-start message-bubble";
+        messageBot.innerHTML = `
+          <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-robot text-white text-sm"></i>
+          </div>
+          <div class="flex-1">
+            <div class="bg-white rounded-2xl rounded-tl-sm shadow-sm p-3 max-w-[85%]">
+              <p class="text-sm text-gray-800">${reponse}</p>
+            </div>
+            <span class="text-xs text-gray-500 ml-2 mt-1 block">Maintenant</span>
+          </div>
+        `;
+        messagesChat.appendChild(messageBot);
+        messagesChat.scrollTop = messagesChat.scrollHeight;
+      }, 1500);
+    }
+  });
+}
+
+if (champMessage) {
+  champMessage.addEventListener("focus", () => {
+    messagesChat.scrollTop = messagesChat.scrollHeight;
+  });
+}
 
 // ========================================
 // NEWSLETTER
 // ========================================
 
-document
-  .getElementById("newsletter-form")
-  .addEventListener("submit", async function (e) {
+const formulaireNewsletter = document.getElementById("newsletter-form");
+if (formulaireNewsletter) {
+  formulaireNewsletter.addEventListener("submit", async function (e) {
     e.preventDefault();
 
     const email = document.getElementById("newsletter-email").value;
@@ -866,6 +889,7 @@ document
       bouton.classList.remove("opacity-50");
     }
   });
+}
 
 // Validation email
 function validerEmail(email) {

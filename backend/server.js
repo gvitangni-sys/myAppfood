@@ -1,174 +1,121 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
-const mongoose = require("mongoose");
-const OpenAI = require("openai");
 require("dotenv").config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "../")));
 
-// Connexion MongoDB SIMPLIFIÉE
-const connectDB = async () => {
-  try {
-    // Seulement se connecter si MONGODB_URI est configuré
-    if (
-      process.env.MONGODB_URI &&
-      !process.env.MONGODB_URI.includes("localhost")
-    ) {
-      await mongoose.connect(process.env.MONGODB_URI);
-      console.log("MongoDB connecté avec succès");
-    } else {
-      console.log("MongoDB non configuré - Mode démo activé");
-      // Ne pas bloquer le serveur si MongoDB n'est pas disponible
-    }
-  } catch (erreur) {
-    console.log("Mode démo activé - MongoDB non disponible");
-  }
-};
+// Connexion MongoDB
+const MONGODB_URI = process.env.MONGODB_URI;
 
-connectDB();
-
-// Configuration OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Routes
-const routesAuth = require("./routes/auth");
-app.use("/api/auth", routesAuth);
-
-// Servir les fichiers statiques du frontend
-app.use(express.static(path.join(__dirname, "..")));
-
-// ========== ROUTES API ==========
-
-// Route API de base
-app.get("/api", (req, res) => {
-  res.json({
-    message: "MyAppFood API est opérationnelle!",
-    status: "online",
-    version: "1.0",
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => {
+    console.log("Connexion a MongoDB Atlas reussie");
+  })
+  .catch((err) => {
+    console.error("Erreur de connexion a MongoDB:", err);
+    process.exit(1);
   });
+
+// Middleware de logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
 });
 
-// Route santé
-app.get("/api/sante", (req, res) => {
-  res.json({
-    statut: "OK",
-    message: "MyAppFood API opérationnelle",
-    mongodb:
-      mongoose.connection.readyState === 1
-        ? "Connectée"
-        : "Non configuré - Mode démo",
-    timestamp: new Date().toISOString(),
-  });
-});
+// Routes API
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/admin", require("./routes/admin"));
 
-// Route test
+// Route de test API
 app.get("/api/test", (req, res) => {
   res.json({
-    message: " Backend MyAppFood fonctionne!",
-    status: "OK",
+    succes: true,
+    message: "API MyAppFood fonctionne correctement",
     timestamp: new Date().toISOString(),
+    version: "1.0.0",
   });
 });
 
-// Route chatbot OpenAI
-app.post("/api/chat", async (req, res) => {
-  try {
-    const { message } = req.body;
+// Route de santé de l'API
+app.get("/api/health", (req, res) => {
+  const dbStatus =
+    mongoose.connection.readyState === 1 ? "connected" : "disconnected";
 
-    if (!message || message.trim() === "") {
-      return res.status(400).json({
-        response: "Veuillez entrer un message",
-        action: "none",
-        targetId: null,
-      });
-    }
-
-    // Si OpenAI n'est pas configuré, réponse locale
-    if (!process.env.OPENAI_API_KEY) {
-      return res.json({
-        response:
-          "Je suis en mode démo. Je peux vous aider à trouver des restaurants près de vous!",
-        action: "none",
-        targetId: null,
-      });
-    }
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: `Tu es Askbot, un assistant intelligent spécialisé dans la recherche de restaurants.
-          
-          FORMAT DE RÉPONSE OBLIGATOIRE en JSON :
-          {
-            "response": "Réponse textuelle friendly et utile en français",
-            "action": "filter_restaurants" | "show_route" | "none",
-            "targetId": null ou "id_etablissement"
-          }
-
-          RÈGLES D'ACTION :
-          - "filter_restaurants" : si l'utilisateur demande des restaurants, resto, manger, cuisine
-          - "show_route" : si l'utilisateur demande un itinéraire, chemin, route, directions
-          - "none" : pour les salutations, remerciements, questions générales
-
-          SOIS :
-          - Naturel et amical en français
-          - Concis et utile
-          - Spécialisé dans la recherche de restaurants
-          - Encourage à utiliser la localisation si besoin
-
-          EXEMPLES :
-          User: "Montre les restaurants" → {"response": "Je cherche les restaurants près de vous...", "action": "filter_restaurants", "targetId": null}
-          User: "Itinéraire vers le plus proche" → {"response": "Je calcule l'itinéraire...", "action": "show_route", "targetId": null}
-          User: "Bonjour" → {"response": "Bonjour ! Je peux vous aider à trouver des restaurants 😊", "action": "none", "targetId": null}`,
-        },
-        {
-          role: "user",
-          content: `Message: ${message}`,
-        },
-      ],
-      max_tokens: 250,
-      temperature: 0.7,
-    });
-
-    const reponseBot = completion.choices[0].message.content;
-
-    // Parser la réponse JSON
-    try {
-      const parsedResponse = JSON.parse(reponseBot);
-      res.json(parsedResponse);
-    } catch (parseError) {
-      // Fallback si la réponse n'est pas du JSON valide
-      console.log("Réponse non-JSON, utilisation du fallback");
-      res.json({
-        response: reponseBot,
-        action: "none",
-        targetId: null,
-      });
-    }
-  } catch (erreur) {
-    console.error("Erreur OpenAI:", erreur);
-    res.json({
-      response: "Service temporairement indisponible. Mode démo activé.",
-      action: "none",
-      targetId: null,
-    });
-  }
+  res.json({
+    status: "OK",
+    database: dbStatus,
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
 });
 
-// Démarrer le serveur
-app.listen(PORT, () => {
-  console.log(`Serveur démarré sur http://localhost:${PORT}`);
-  console.log(`Frontend: http://localhost:${PORT}`);
-  console.log(`API Auth: http://localhost:${PORT}/api/auth`);
-  console.log(`Health: http://localhost:${PORT}/api/sante`);
+// Servir les fichiers statics
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../index.html"));
+});
+
+app.get("/admin.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "../admin.html"));
+});
+
+// Gestion des routes non trouvées (API)
+app.use("/api/*", (req, res) => {
+  res.status(404).json({
+    succes: false,
+    message: "Route API non trouvee",
+  });
+});
+
+// Gestion des erreurs globales
+app.use((err, req, res, next) => {
+  console.error("Erreur serveur:", err);
+
+  res.status(500).json({
+    succes: false,
+    message: "Erreur interne du serveur",
+    error: process.env.NODE_ENV === "development" ? err.message : undefined,
+  });
+});
+
+// Gestion de la fermeture gracieuse
+process.on("SIGINT", async () => {
+  console.log("Fermeture gracieuse du serveur...");
+  await mongoose.connection.close();
+  console.log("Connexion MongoDB fermee");
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  console.log("Arret du serveur...");
+  await mongoose.connection.close();
+  console.log("Connexion MongoDB fermee");
+  process.exit(0);
+});
+
+// Démarrage du serveur
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || "localhost";
+
+app.listen(PORT, HOST, () => {
+  console.log("==================================================");
+  console.log("Serveur MyAppFood demarre");
+  console.log("==================================================");
+  console.log("Port: " + PORT);
+  console.log("Host: " + HOST);
+  console.log("Environment: " + (process.env.NODE_ENV || "development"));
+  console.log("URL: http://" + HOST + ":" + PORT);
+  console.log("URL Admin: http://" + HOST + ":" + PORT + "/admin.html");
+  console.log("API Health: http://" + HOST + ":" + PORT + "/api/health");
+  console.log("==================================================");
+  console.log("Compte admin: admin@myappfood.com");
+  console.log("Mot de passe: admin123");
+  console.log("==================================================");
 });
