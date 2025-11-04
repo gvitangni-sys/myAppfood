@@ -49,7 +49,7 @@
   <body class="flex items-center justify-center p-4">
     <div class="w-full max-w-md">
       <!-- Logo/Header -->
-      <div class="text-center mb-8 fade-in">
+      <div class="text-center mb-4 fade-in">
         <a href="index.html" class="inline-block">
           <h1 class="text-4xl font-bold text-orange-500">MyAppFood</h1>
         </a>
@@ -58,30 +58,30 @@
 
       <!-- Card principale -->
       <div
-        class="bg-white rounded-2xl shadow-xl p-8 fade-in"
+        class="bg-white rounded-2xl shadow-xl p-4 fade-in"
         style="animation-delay: 0.2s"
       >
         <!-- Icône -->
         <div class="flex justify-center mb-6">
           <div
-            class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center"
+            class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center"
           >
-            <i class="fas fa-lock text-orange-500 text-3xl"></i>
+            <i class="fas fa-lock text-orange-500 text-2xl"></i>
           </div>
         </div>
 
         <!-- Titre -->
         <h2
-          class="text-2xl md:text-3xl font-bold text-gray-800 text-center mb-3"
+          class="text-1xl md:text-2xl font-bold text-gray-800 text-center mb-3"
         >
           Mot de passe oublié ?
         </h2>
-        <p class="text-gray-600 text-center mb-8">
+        <p class="text-gray-600 text-center mb-4">
           Entrez votre email pour recevoir un lien de réinitialisation
         </p>
 
         <!-- Formulaire -->
-        <form id="reset-form" class="space-y-6">
+        <form id="reset-form" class="space-y-3">
           <div>
             <label
               for="email"
@@ -99,7 +99,7 @@
                 type="email"
                 id="email"
                 required
-                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
+                class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
                 placeholder="votre@email.com"
               />
             </div>
@@ -107,17 +107,17 @@
 
           <button
             type="submit"
-            class="w-full py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            class="w-full py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all duration-300 shadow-lg flex items-center justify-center gap-1"
           >
             <i class="fas fa-paper-plane"></i>
-            <span>Envoyer le lien de réinitialisation</span>
+            <span class="text-sm">Envoyer le lien de réinitialisation</span>
           </button>
         </form>
 
         <!-- Message de succès (caché par défaut) -->
         <div
           id="success-message"
-          class="hidden mt-6 p-4 bg-green-100 border border-green-400 rounded-lg"
+          class="hidden mt-4 p-4 bg-green-100 border border-green-400 rounded-lg"
         >
           <div class="flex items-start gap-3">
             <i class="fas fa-check-circle text-green-500 text-xl mt-0.5"></i>
@@ -148,14 +148,6 @@
         class="text-center mt-8 text-gray-600 text-sm fade-in"
         style="animation-delay: 0.4s"
       >
-        <p>
-          Besoin d'aide ?
-          <a
-            href="mailto:support@myappfood.com"
-            class="text-orange-500 hover:text-orange-600"
-            >Contactez le support</a
-          >
-        </p>
         <p class="mt-2">&copy; 2025 MyAppFood. Tous droits réservés.</p>
       </div>
     </div>
