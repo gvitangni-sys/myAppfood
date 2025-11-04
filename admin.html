@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="asset/css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <title>Dashboard - MyAppFood</title>
+  </head>
+  <body class="bg-gray-50">
+    <!-- SIDEBAR -->
+    <div class="fixed top-0 left-0 h-full w-64 bg-gray-800 shadow-xl z-50">
+      <div class="p-6 border-b border-gray-700">
+        <div class="flex items-center">
+          <div
+            class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center"
+          >
+            <i class="fas fa-utensils text-white text-lg"></i>
+          </div>
+          <span class="text-xl font-bold text-white ml-3">MyAppFood</span>
+        </div>
+      </div>
+
+      <nav class="mt-6">
+        <ul class="space-y-2 px-4">
+          <li>
+            <a
+              href="#"
+              data-section="dashboard"
+              class="nav-link flex items-center px-4 py-3 text-white bg-orange-500 rounded-lg transition-colors"
+            >
+              <i class="fas fa-chart-line mr-3 text-lg"></i>
+              <span class="font-medium">Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a
+              href="#"
+              data-section="searches"
+              class="nav-link flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <i class="fas fa-search mr-3 text-lg"></i>
+              <span class="font-medium">Recherches</span>
+            </a>
+          </li>
+          <li>
+            <a
+              href="#"
+              data-section="settings"
+              class="nav-link flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <i class="fas fa-cog mr-3 text-lg"></i>
+              <span class="font-medium">Paramètres</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="ml-64 min-h-screen">
+      <!-- HEADER -->
+      <header
+        class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40"
+      >
+        <div class="py-4 px-6 flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800" id="page-title">
+              Dashboard
+            </h1>
+            <p class="text-sm text-gray-500 mt-1" id="page-subtitle">
+              Vue d'ensemble de votre activité
+            </p>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <button
+              class="relative w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+            >
+              <i class="fas fa-bell text-gray-600"></i>
+              <span
+                class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center"
+                >0</span
+              >
+            </button>
+
+            <div class="relative pl-4 border-l border-gray-200">
+              <button
+                id="user-menu-btn"
+                class="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+              >
+                <img
+                  src="https://ui-avatars.com/api/?name=Admin&background=f97316&color=fff"
+                  alt="Admin"
+                  class="w-10 h-10 rounded-full border-2 border-orange-500"
+                />
+                <div class="text-left">
+                  <p class="text-sm font-semibold text-gray-800">Admin</p>
+                  <p class="text-xs text-gray-500">Administrateur</p>
+                </div>
+                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div
+                id="user-dropdown"
+                class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2"
+              >
+                <a
+                  href="#"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <i class="fas fa-user mr-3 text-gray-400"></i>
+                  Mon profil
+                </a>
+                <a
+                  href="#"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <i class="fas fa-cog mr-3 text-gray-400"></i>
+                  Paramètres
+                </a>
+                <hr class="my-2 border-gray-200" />
+                <a
+                  href="#"
+                  id="logout-btn"
+                  class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
+                  <i class="fas fa-sign-out-alt mr-3"></i>
+                  Se déconnecter
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- SECTIONS -->
+      <div class="p-6">
+        <!-- SECTION DASHBOARD -->
+        <div id="section-dashboard" class="section-content active">
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
+          >
+            <!-- Total Utilisateurs -->
+            <div
+              class="card-animate bg-white rounded-xl shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <div
+                  class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"
+                >
+                  <i class="fas fa-users text-blue-500 text-xl"></i>
+                </div>
+                <span
+                  class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full"
+                  >0%</span
+                >
+              </div>
+              <h3 class="text-gray-500 text-sm font-medium mb-1">
+                Total Utilisateurs
+              </h3>
+              <p class="text-3xl font-bold text-gray-800" id="total-users">0</p>
+              <div class="mt-4 flex items-center text-xs text-gray-500">
+                <i class="fas fa-minus text-gray-500 mr-1"></i>
+                <span>0 ce mois-ci</span>
+              </div>
+            </div>
+
+            <!-- Recherches Aujourd'hui -->
+            <div
+              class="card-animate bg-white rounded-xl shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <div
+                  class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center"
+                >
+                  <i class="fas fa-search text-orange-500 text-xl"></i>
+                </div>
+                <span
+                  class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full"
+                  >0%</span
+                >
+              </div>
+              <h3 class="text-gray-500 text-sm font-medium mb-1">
+                Recherches Aujourd'hui
+              </h3>
+              <p class="text-3xl font-bold text-gray-800" id="searches-today">
+                0
+              </p>
+              <div class="mt-4 flex items-center text-xs text-gray-500">
+                <i class="fas fa-clock mr-1"></i>
+                <span>Aucune recherche</span>
+              </div>
+            </div>
+
+            <!-- Connexions Actives -->
+            <div
+              class="card-animate bg-white rounded-xl shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <div
+                  class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"
+                >
+                  <i class="fas fa-circle text-green-500 text-xl"></i>
+                </div>
+                <span
+                  class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full"
+                  >Hors ligne</span
+                >
+              </div>
+              <h3 class="text-gray-500 text-sm font-medium mb-1">
+                Utilisateurs Actifs
+              </h3>
+              <p class="text-3xl font-bold text-gray-800" id="active-users">
+                0
+              </p>
+              <div class="mt-4 flex items-center text-xs text-gray-500">
+                <i class="fas fa-signal mr-1"></i>
+                <span>0% du total</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTIVITÉ -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Restaurants les plus recherchés -->
+            <div
+              class="lg:col-span-2 bg-white rounded-xl shadow-md border border-gray-100 p-6"
+            >
+              <h2 class="text-lg font-bold text-gray-800 mb-6">
+                <i class="fas fa-utensils text-orange-500 mr-2"></i>
+                Restaurants Populaires
+              </h2>
+
+              <div class="space-y-4" id="popular-restaurants">
+                <div class="text-center py-8 text-gray-500">
+                  <i class="fas fa-utensils text-4xl mb-3 opacity-50"></i>
+                  <p>Aucun restaurant populaire</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Heures de Pointe -->
+            <div
+              class="bg-white rounded-xl shadow-md border border-gray-100 p-6"
+            >
+              <h2 class="text-lg font-bold text-gray-800 mb-6">
+                <i class="fas fa-clock text-orange-500 mr-2"></i>
+                Heures de Pointe
+              </h2>
+
+              <div class="space-y-3" id="peak-hours">
+                <div class="text-center py-8 text-gray-500">
+                  <i class="fas fa-clock text-4xl mb-3 opacity-50"></i>
+                  <p>Aucune activité</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION UTILISATEURS -->
+        <div id="section-users" class="section-content">
+          <div class="bg-white rounded-xl shadow-md border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-xl font-bold text-gray-800">
+                Liste des Utilisateurs
+              </h2>
+              <button
+                class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+              >
+                <i class="fas fa-plus mr-2"></i>Ajouter
+              </button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-gray-200">
+                    <th
+                      class="text-left py-3 px-4 text-sm font-semibold text-gray-600"
+                    >
+                      Utilisateur
+                    </th>
+                    <th
+                      class="text-left py-3 px-4 text-sm font-semibold text-gray-600"
+                    >
+                      Email
+                    </th>
+                    <th
+                      class="text-left py-3 px-4 text-sm font-semibold text-gray-600"
+                    >
+                      Inscription
+                    </th>
+                    <th
+                      class="text-left py-3 px-4 text-sm font-semibold text-gray-600"
+                    >
+                      Recherches
+                    </th>
+                    <th
+                      class="text-left py-3 px-4 text-sm font-semibold text-gray-600"
+                    >
+                      Statut
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="users-table">
+                  <tr>
+                    <td colspan="5" class="text-center py-8 text-gray-500">
+                      <i class="fas fa-users text-4xl mb-3 opacity-50"></i>
+                      <p>Aucun utilisateur</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION RECHERCHES -->
+        <div id="section-searches" class="section-content">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div
+              class="bg-white rounded-xl shadow-md border border-gray-100 p-6"
+            >
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500 mb-1">Total Recherches</p>
+                  <p class="text-3xl font-bold text-gray-800">0</p>
+                </div>
+                <div
+                  class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center"
+                >
+                  <i class="fas fa-search text-orange-500 text-xl"></i>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="bg-white rounded-xl shadow-md border border-gray-100 p-6"
+            >
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500 mb-1">Aujourd'hui</p>
+                  <p class="text-3xl font-bold text-gray-800">0</p>
+                </div>
+                <div
+                  class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"
+                >
+                  <i class="fas fa-calendar-day text-blue-500 text-xl"></i>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="bg-white rounded-xl shadow-md border border-gray-100 p-6"
+            >
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-gray-500 mb-1">Ce mois</p>
+                  <p class="text-3xl font-bold text-gray-800">0</p>
+                </div>
+                <div
+                  class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"
+                >
+                  <i class="fas fa-calendar-alt text-green-500 text-xl"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION LOCALISATIONS -->
+        <div id="section-locations" class="section-content">
+          <div
+            class="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-6"
+          >
+            <h2 class="text-xl font-bold text-gray-800 mb-6">
+              Répartition Géographique
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div id="locations-list">
+                <div class="text-center py-8 text-gray-500">
+                  <i class="fas fa-map-marker-alt text-4xl mb-3 opacity-50"></i>
+                  <p>Aucune donnée de localisation</p>
+                </div>
+              </div>
+
+              <div
+                class="bg-gray-50 rounded-lg p-6 flex items-center justify-center"
+              >
+                <div class="text-center">
+                  <i
+                    class="fas fa-map-marked-alt text-gray-300 text-6xl mb-4"
+                  ></i>
+                  <p class="text-gray-500">Carte des localisations</p>
+                  <p class="text-sm text-gray-400 mt-2">
+                    Intégration carte à venir
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION PARAMÈTRES -->
+        <div id="section-settings" class="section-content">
+          <div class="bg-white rounded-xl shadow-md border border-gray-100 p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">Paramètres</h2>
+
+            <div class="space-y-6">
+              <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                  Informations du compte
+                </h3>
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Nom d'utilisateur
+                    </label>
+                    <input
+                      type="text"
+                      value="Admin"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value="admin@myappfood.com"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-orange-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                  Notifications
+                </h3>
+                <div class="space-y-3">
+                  <label
+                    class="flex items-center justify-between cursor-pointer"
+                  >
+                    <span class="text-sm text-gray-700">
+                      Nouvelles inscriptions
+                    </span>
+                    <input type="checkbox" checked class="toggle-checkbox" />
+                  </label>
+                  <label
+                    class="flex items-center justify-between cursor-pointer"
+                  >
+                    <span class="text-sm text-gray-700"
+                      >Nouvelles recherches</span
+                    >
+                    <input type="checkbox" checked class="toggle-checkbox" />
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  class="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                >
+                  <i class="fas fa-save mr-2"></i>Enregistrer les modifications
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="asset/js/admin.js"></script>
+  </body>
+</html>
