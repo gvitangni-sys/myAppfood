@@ -6,14 +6,12 @@ require("dotenv").config();
 
 const app = express();
 
-// Middleware
+// Middleware CORS
 app.use(cors());
 app.use(express.json());
 
 // Connexion MongoDB
 const MONGODB_URI = process.env.MONGODB_URI;
-
-console.log("Tentative de connexion a MongoDB...");
 
 mongoose
   .connect(MONGODB_URI)
@@ -24,17 +22,15 @@ mongoose
     console.error("Erreur de connexion a MongoDB:", err.message);
   });
 
-// Middleware de logging
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
+// Import des routes
+const authRoutes = require("./routes/auth");
+const adminRoutes = require("./routes/admin");
 
-// Routes API - DOIVENT ÊTRE AVANT les fichiers statiques
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/admin", require("./routes/admin"));
+// Montage des routes - AVANT les fichiers statiques
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 
-// Route de test API
+// Routes de test
 app.get("/api/test", (req, res) => {
   res.json({
     succes: true,
@@ -43,7 +39,6 @@ app.get("/api/test", (req, res) => {
   });
 });
 
-// Route de santé
 app.get("/api/health", (req, res) => {
   const dbStatus =
     mongoose.connection.readyState === 1 ? "connected" : "disconnected";
@@ -66,20 +61,11 @@ app.get("/admin.html", (req, res) => {
   res.sendFile(path.join(__dirname, "../admin.html"));
 });
 
-// Gestion des routes non trouvées (API)
-app.use("/api/*", (req, res) => {
+// Gestion des routes non trouvées
+app.use((req, res) => {
   res.status(404).json({
     succes: false,
-    message: "Route API non trouvee",
-  });
-});
-
-// Gestion des erreurs globales
-app.use((err, req, res, next) => {
-  console.error("Erreur serveur:", err);
-  res.status(500).json({
-    succes: false,
-    message: "Erreur interne du serveur",
+    message: "Route non trouvee: " + req.method + " " + req.originalUrl,
   });
 });
 
@@ -88,4 +74,12 @@ const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port " + PORT);
+  console.log("Routes API disponibles:");
+  console.log("- GET  /api/test");
+  console.log("- GET  /api/health");
+  console.log("- POST /api/auth/inscription");
+  console.log("- POST /api/auth/connexion");
+  console.log("- GET  /api/auth/profil");
+  console.log("- GET  /api/admin/statistiques");
+  console.log("- GET  /api/admin/utilisateurs");
 });
