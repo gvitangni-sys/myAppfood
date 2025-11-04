@@ -11,6 +11,73 @@ const genererToken = (id) => {
   });
 };
 
+// Route speciale pour creer un compte admin directement
+router.post("/admin-setup", async (req, res) => {
+  try {
+    const { email, motDePasse } = req.body;
+
+    if (!email || !motDePasse) {
+      return res.status(400).json({
+        succes: false,
+        message: "Email et mot de passe requis",
+      });
+    }
+
+    if (motDePasse.length < 4) {
+      return res.status(400).json({
+        succes: false,
+        message: "Le mot de passe doit contenir au moins 4 caracteres",
+      });
+    }
+
+    const utilisateurExistant = await Utilisateur.findOne({ email });
+    if (utilisateurExistant) {
+      utilisateurExistant.role = "admin";
+      await utilisateurExistant.save();
+
+      const token = genererToken(utilisateurExistant._id);
+
+      return res.json({
+        succes: true,
+        message: "Compte existant promu administrateur",
+        token,
+        utilisateur: {
+          id: utilisateurExistant._id,
+          email: utilisateurExistant.email,
+          role: utilisateurExistant.role,
+        },
+      });
+    }
+
+    const nouvelAdmin = new Utilisateur({
+      email,
+      motDePasse,
+      role: "admin",
+    });
+
+    await nouvelAdmin.save();
+
+    const token = genererToken(nouvelAdmin._id);
+
+    res.status(201).json({
+      succes: true,
+      message: "Compte administrateur cree avec succes",
+      token,
+      utilisateur: {
+        id: nouvelAdmin._id,
+        email: nouvelAdmin.email,
+        role: nouvelAdmin.role,
+      },
+    });
+  } catch (erreur) {
+    console.error("Erreur creation admin:", erreur);
+    res.status(500).json({
+      succes: false,
+      message: "Erreur lors de la creation du compte administrateur",
+    });
+  }
+});
+
 router.post("/inscription", async (req, res) => {
   try {
     const { email, motDePasse } = req.body;
@@ -81,13 +148,6 @@ router.post("/connexion", async (req, res) => {
       return res.status(401).json({
         succes: false,
         message: "Email ou mot de passe incorrect",
-      });
-    }
-
-    if (utilisateur.statut !== "actif") {
-      return res.status(401).json({
-        succes: false,
-        message: "Votre compte a ete desactive",
       });
     }
 

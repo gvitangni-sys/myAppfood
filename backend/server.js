@@ -6,7 +6,7 @@ require("dotenv").config();
 
 const app = express();
 
-// Middleware CORS
+// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -22,30 +22,15 @@ mongoose
     console.error("Erreur de connexion a MongoDB:", err.message);
   });
 
-// Import ABSOLU des routes (chemins complets)
+// Import des routes
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
 
-// Montage des routes
+// Montage des routes API
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 
-// Route de test pour vérifier que les routes sont montées
-app.get("/api/routes-test", (req, res) => {
-  res.json({
-    succes: true,
-    message: "Routes API test",
-    routes: [
-      "POST /api/auth/inscription",
-      "POST /api/auth/connexion",
-      "GET /api/auth/profil",
-      "GET /api/admin/statistiques",
-      "GET /api/admin/utilisateurs",
-    ],
-  });
-});
-
-// Routes de base
+// Routes API de base
 app.get("/api/test", (req, res) => {
   res.json({
     succes: true,
@@ -64,7 +49,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Servir les fichiers statics
+// Servir les fichiers statics (doit être APRÈS les routes API)
 app.use(express.static(path.join(__dirname, "../")));
 
 // Routes pour les pages HTML
@@ -76,6 +61,10 @@ app.get("/admin.html", (req, res) => {
   res.sendFile(path.join(__dirname, "../admin.html"));
 });
 
+app.get("/admin-signup.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "../admin-signup.html"));
+});
+
 // Gestion des routes non trouvées
 app.use((req, res) => {
   res.status(404).json({
@@ -84,20 +73,23 @@ app.use((req, res) => {
   });
 });
 
+// Gestion des erreurs
+app.use((err, req, res, next) => {
+  console.error("Erreur serveur:", err);
+  res.status(500).json({
+    succes: false,
+    message: "Erreur interne du serveur",
+  });
+});
+
 // Démarrage du serveur
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("=== SERVEUR DEMARRE ===");
-  console.log("Port: " + PORT);
-  console.log("=== ROUTES DISPONIBLES ===");
-  console.log("GET  /api/test");
-  console.log("GET  /api/health");
-  console.log("GET  /api/routes-test");
-  console.log("POST /api/auth/inscription");
-  console.log("POST /api/auth/connexion");
-  console.log("GET  /api/auth/profil");
-  console.log("GET  /api/admin/statistiques");
-  console.log("GET  /api/admin/utilisateurs");
-  console.log("=== ================= ===");
+  console.log("Serveur demarre sur le port " + PORT);
+  console.log("URL: http://localhost:" + PORT);
+  console.log("URL Admin: http://localhost:" + PORT + "/admin.html");
+  console.log(
+    "URL Inscription Admin: http://localhost:" + PORT + "/admin-signup.html"
+  );
 });

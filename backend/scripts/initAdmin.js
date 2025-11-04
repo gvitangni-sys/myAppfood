@@ -23,12 +23,9 @@ async function initialiserAdmin() {
     });
 
     await admin.save();
-    console.log("Compte administrateur cree avec succes");
-    console.log("Email: " + emailAdmin);
-    console.log("Mot de passe: admin123");
-    console.log(
-      "IMPORTANT: Changez le mot de passe apres la premiere connexion"
-    );
+    console.log("compte administrateur cree avec succes");
+    console.log("email: " + emailAdmin);
+    console.log("mot de passe: admin123");
   } catch (erreur) {
     console.error("Erreur lors de la creation de l administrateur:", erreur);
   } finally {
