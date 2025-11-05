@@ -165,13 +165,16 @@
         loadingOverlay.classList.remove("hidden");
 
         try {
-          const response = await fetch("/api/reset-password/request", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email }),
-          });
+          const response = await fetch(
+            "https://myappfood-backend.onrender.com/api/reset-password/request",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ email }),
+            }
+          );
 
           const data = await response.json();
           loadingOverlay.classList.add("hidden");
