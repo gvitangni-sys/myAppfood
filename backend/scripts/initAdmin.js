@@ -5,29 +5,28 @@ require("dotenv").config();
 async function initialiserAdmin() {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log("Connexion a MongoDB etablie");
+    console.log("Connexion à MongoDB établie");
 
     const emailAdmin = "admin@myappfood.com";
-    const adminExistant = await Utilisateur.findOne({ email: emailAdmin });
 
-    if (adminExistant) {
-      console.log("Compte administrateur existe deja");
-      console.log("Email: " + emailAdmin);
-      return;
-    }
+    // Supprimer l'ancien admin s'il existe
+    await Utilisateur.deleteOne({ email: emailAdmin });
+    console.log("Ancien compte admin supprimé");
 
+    // Créer le nouvel admin
     const admin = new Utilisateur({
       email: emailAdmin,
       motDePasse: "admin123",
       role: "admin",
+      statut: "actif",
     });
 
     await admin.save();
-    console.log("compte administrateur cree avec succes");
-    console.log("email: " + emailAdmin);
-    console.log("mot de passe: admin123");
+    console.log("Nouveau compte administrateur créé avec succès");
+    console.log("Email: " + emailAdmin);
+    console.log("Mot de passe: admin123");
   } catch (erreur) {
-    console.error("Erreur lors de la creation de l administrateur:", erreur);
+    console.error("Erreur lors de la création de l'administrateur:", erreur);
   } finally {
     await mongoose.connection.close();
   }

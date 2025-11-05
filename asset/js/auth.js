@@ -328,7 +328,20 @@ document.addEventListener("DOMContentLoaded", function () {
     localStorage.setItem("token", donnees.token);
     localStorage.setItem("utilisateur", JSON.stringify(donnees.utilisateur));
 
-    // Débloquer l'interface
+    // Vérifier si c'est un admin et rediriger
+    if (donnees.utilisateur.role === "admin") {
+      // Débloquer l'interface
+      debloquerInterface();
+
+      // Fermer les modales
+      fermerModales();
+
+      // Rediriger vers le dashboard admin
+      window.location.href = "admin.html";
+      return;
+    }
+
+    // Débloquer l'interface pour les utilisateurs normaux
     debloquerInterface();
 
     // Fermer les modales
@@ -367,9 +380,8 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    afficherNotification("Connexion réussie ! Bienvenue ", "success");
+    afficherNotification("Connexion réussie ! Bienvenue", "success");
 
-    // Réinitialiser les formulaires
     if (formulaireConnexion) formulaireConnexion.reset();
     if (formulaireInscription) formulaireInscription.reset();
   }
@@ -386,11 +398,11 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         const utilisateur = JSON.parse(utilisateurStr);
 
-        // Masquer les boutons d'authentification
+        // Masquer
         if (boutonAuthMobile) boutonAuthMobile.classList.add("hidden");
         if (boutonAuthDesktop) boutonAuthDesktop.classList.add("hidden");
 
-        // Afficher le profil utilisateur (Desktop)
+        // Afficher  (Desktop)
         if (profilUtilisateur) {
           profilUtilisateur.classList.remove("hidden");
           profilUtilisateur.classList.add("flex");
@@ -402,7 +414,7 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         }
 
-        // Afficher le profil utilisateur (Mobile)
+        // Afficher
         if (profilUtilisateurMobile) {
           profilUtilisateurMobile.classList.remove("hidden");
           profilUtilisateurMobile.classList.add("flex");
@@ -465,7 +477,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 1000);
   }
 
-  // Event listeners pour la déconnexion
   if (profilUtilisateur) {
     profilUtilisateur.addEventListener("click", function () {
       if (confirm("Voulez-vous vous déconnecter ?")) {
@@ -532,12 +543,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 3000);
   }
 
-  // Exposer la fonction globalement pour être utilisée ailleurs
   window.afficherNotification = afficherNotification;
-
-  // ========================================
-  // INITIALISATION
-  // ========================================
 
   verifierStatutConnexion();
 });

@@ -44,7 +44,6 @@ router.post("/inscription", async (req, res) => {
     const nouvelUtilisateur = new Utilisateur({
       email,
       motDePasse,
-      nom: email.split("@")[0], // Nom basé sur l'email
     });
 
     await nouvelUtilisateur.save();
@@ -59,7 +58,8 @@ router.post("/inscription", async (req, res) => {
       utilisateur: {
         id: nouvelUtilisateur._id,
         email: nouvelUtilisateur.email,
-        nom: nouvelUtilisateur.nom,
+        role: nouvelUtilisateur.role,
+        nom: nouvelUtilisateur.email.split("@")[0],
       },
     });
   } catch (erreur) {
@@ -101,6 +101,10 @@ router.post("/connexion", async (req, res) => {
       });
     }
 
+    // Mettre à jour la dernière connexion
+    utilisateur.derniereConnexion = new Date();
+    await utilisateur.save();
+
     // Générer token
     const token = genererToken(utilisateur._id);
 
@@ -111,7 +115,8 @@ router.post("/connexion", async (req, res) => {
       utilisateur: {
         id: utilisateur._id,
         email: utilisateur.email,
-        nom: utilisateur.nom,
+        role: utilisateur.role,
+        nom: utilisateur.email.split("@")[0],
       },
     });
   } catch (erreur) {
@@ -119,6 +124,28 @@ router.post("/connexion", async (req, res) => {
     res.status(500).json({
       succes: false,
       message: "Erreur lors de la connexion",
+    });
+  }
+});
+
+// Route profil utilisateur
+router.get("/profil", verifierAuth, async (req, res) => {
+  try {
+    res.json({
+      succes: true,
+      utilisateur: {
+        id: req.utilisateur._id,
+        email: req.utilisateur.email,
+        role: req.utilisateur.role,
+        nom: req.utilisateur.email.split("@")[0],
+        dateInscription: req.utilisateur.dateInscription,
+      },
+    });
+  } catch (erreur) {
+    console.error("Erreur profil:", erreur);
+    res.status(500).json({
+      succes: false,
+      message: "Erreur lors de la récupération du profil",
     });
   }
 });
