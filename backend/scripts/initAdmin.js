@@ -9,24 +9,40 @@ async function initialiserAdmin() {
 
     const emailAdmin = "admin@myappfood.com";
 
-    // Supprimer l'ancien admin s'il existe
-    await Utilisateur.deleteOne({ email: emailAdmin });
-    console.log("Ancien compte admin supprimé");
+    // Mettre à jour l'admin existant pour lui donner le rôle admin
+    const resultat = await Utilisateur.findOneAndUpdate(
+      { email: emailAdmin },
+      {
+        role: "admin",
+        motDePasse: "admin123", // Réinitialiser le mot de passe
+      },
+      { new: true }
+    );
 
-    // Créer le nouvel admin
-    const admin = new Utilisateur({
-      email: emailAdmin,
-      motDePasse: "admin123",
-      role: "admin",
-      statut: "actif",
-    });
+    if (resultat) {
+      console.log("Compte administrateur MIS À JOUR avec succès");
+      console.log("Email: " + emailAdmin);
+      console.log("Mot de passe: admin123");
+      console.log("Rôle: " + resultat.role);
+    } else {
+      // Créer un nouvel admin si aucun n'existe
+      const admin = new Utilisateur({
+        email: emailAdmin,
+        motDePasse: "admin123",
+        role: "admin",
+        statut: "actif",
+      });
 
-    await admin.save();
-    console.log("Nouveau compte administrateur créé avec succès");
-    console.log("Email: " + emailAdmin);
-    console.log("Mot de passe: admin123");
+      await admin.save();
+      console.log("Nouveau compte administrateur CRÉÉ avec succès");
+      console.log("Email: " + emailAdmin);
+      console.log("Mot de passe: admin123");
+    }
   } catch (erreur) {
-    console.error("Erreur lors de la création de l'administrateur:", erreur);
+    console.error(
+      "Erreur lors de la création/mise à jour de l'administrateur:",
+      erreur
+    );
   } finally {
     await mongoose.connection.close();
   }
