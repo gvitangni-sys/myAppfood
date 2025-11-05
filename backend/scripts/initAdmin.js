@@ -25,7 +25,6 @@ async function initialiserAdmin() {
       console.log("Mot de passe: admin123");
       console.log("Rôle: " + resultat.role);
     } else {
-      // Créer un nouvel admin si aucun n'existe
       const admin = new Utilisateur({
         email: emailAdmin,
         motDePasse: "admin123",
