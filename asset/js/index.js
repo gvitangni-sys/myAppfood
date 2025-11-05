@@ -1,6 +1,4 @@
-// ========================================
-// GESTION DE LA GÉOLOCALISATION (HEADER)
-// ========================================
+// GESTION DE LA GÉOLOCALISATION
 
 let positionUtilisateur = {
   lat: null,
@@ -21,7 +19,6 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
 }).addTo(carte);
 
-// Fonction pour obtenir le nom de la ville via géocodage inverse
 async function obtenirNomVille(lat, lng) {
   try {
     const reponse = await fetch(

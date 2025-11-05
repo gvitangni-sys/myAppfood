@@ -404,10 +404,9 @@ app.get("/api/test-openai", async (req, res) => {
 });
 
 // ========================================
-// ROUTES EXISTANTES
+// ROUTES
 // ========================================
 
-// Import ABSOLU des routes (chemins complets)
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
 
