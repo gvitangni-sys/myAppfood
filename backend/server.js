@@ -54,7 +54,7 @@ app.post("/api/reset-password/request", async (req, res) => {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailyRegex.test(email)) {
       return res.status(400).json({
         succes: false,
         message: "Format d'email invalide",
