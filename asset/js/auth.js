@@ -380,7 +380,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    afficherNotification("Connexion réussie ! Bienvenue", "success");
+    afficherNotification(" ! Bienvenue", "success");
 
     if (formulaireConnexion) formulaireConnexion.reset();
     if (formulaireInscription) formulaireInscription.reset();

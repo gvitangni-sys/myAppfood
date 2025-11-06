@@ -9,11 +9,9 @@ require("dotenv").config();
 
 const app = express();
 
-// Middleware CORS
 app.use(cors());
 app.use(express.json());
 
-// Connexion MongoDB
 const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose
@@ -25,22 +23,13 @@ mongoose
     console.error("Erreur de connexion a MongoDB:", err.message);
   });
 
-// Import des models
 const Utilisateur = require("./models/Utilisateur");
+const ResetToken = require("./models/ResetToken");
 
-// Configuration OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// ========================================
-// SYSTÈME DE RÉINITIALISATION DE MOT DE PASSE
-// ========================================
-
-// Stockage temporaire des tokens
-const resetTokens = new Map();
-
-// Configuration du transporteur email Gmail
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -49,12 +38,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Fonction pour générer un token unique
 function genererTokenReinitialisation() {
-  return crypto.randomBytes(16).toString("hex");
+  return crypto.randomBytes(32).toString("hex");
 }
 
-// Route 1: Demande de réinitialisation
 app.post("/api/reset-password/request", async (req, res) => {
   try {
     const { email } = req.body;
@@ -66,7 +53,6 @@ app.post("/api/reset-password/request", async (req, res) => {
       });
     }
 
-    // Validation email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -75,7 +61,6 @@ app.post("/api/reset-password/request", async (req, res) => {
       });
     }
 
-    // Vérifier si l'utilisateur existe
     const utilisateurExistant = await Utilisateur.findOne({ email });
     if (!utilisateurExistant) {
       return res.status(404).json({
@@ -84,21 +69,20 @@ app.post("/api/reset-password/request", async (req, res) => {
       });
     }
 
-    // Générer un token unique
     const resetToken = genererTokenReinitialisation();
 
-    // Stocke le token avec expiration (15 minutes)
-    resetTokens.set(resetToken, {
+    await ResetToken.deleteMany({ utilisateurId: utilisateurExistant._id });
+
+    const tokenDocument = new ResetToken({
+      token: resetToken,
       email: email,
       utilisateurId: utilisateurExistant._id,
-      createdAt: Date.now(),
-      expiresAt: Date.now() + 15 * 60 * 1000,
     });
 
-    // Créer le lien de réinitialisation
+    await tokenDocument.save();
+
     const resetLink = `https://myappfood-backend.onrender.com/new_mdpo.html?token=${resetToken}`;
 
-    // Envoyer l'email
     const mailOptions = {
       from: "MyAppFood <noreply@myappfood.com>",
       to: email,
@@ -151,12 +135,13 @@ app.post("/api/reset-password/request", async (req, res) => {
   }
 });
 
-// Route 2: Verifier la validite d'un token
-app.get("/api/reset-password/verify/:token", (req, res) => {
+app.get("/api/reset-password/verify/:token", async (req, res) => {
   try {
     const { token } = req.params;
 
-    if (!resetTokens.has(token)) {
+    const tokenData = await ResetToken.findOne({ token });
+
+    if (!tokenData) {
       return res.status(400).json({
         valid: false,
         error: "INVALID_TOKEN",
@@ -164,11 +149,12 @@ app.get("/api/reset-password/verify/:token", (req, res) => {
       });
     }
 
-    const tokenData = resetTokens.get(token);
+    const maintenant = new Date();
+    const delaiExpiration = 15 * 60 * 1000;
+    const tempsEcoule = maintenant - tokenData.createdAt;
 
-    // Verifier si le token a expire
-    if (Date.now() > tokenData.expiresAt) {
-      resetTokens.delete(token);
+    if (tempsEcoule > delaiExpiration) {
+      await ResetToken.deleteOne({ token });
       return res.status(400).json({
         valid: false,
         error: "EXPIRED_TOKEN",
@@ -188,7 +174,6 @@ app.get("/api/reset-password/verify/:token", (req, res) => {
   }
 });
 
-// Route 3: Confirmer le nouveau mot de passe
 app.post("/api/reset-password/confirm", async (req, res) => {
   try {
     const { token, newPassword } = req.body;
@@ -200,8 +185,9 @@ app.post("/api/reset-password/confirm", async (req, res) => {
       });
     }
 
-    // Verifier le token
-    if (!resetTokens.has(token)) {
+    const tokenData = await ResetToken.findOne({ token });
+
+    if (!tokenData) {
       return res.status(400).json({
         succes: false,
         error: "INVALID_TOKEN",
@@ -209,11 +195,12 @@ app.post("/api/reset-password/confirm", async (req, res) => {
       });
     }
 
-    const tokenData = resetTokens.get(token);
+    const maintenant = new Date();
+    const delaiExpiration = 15 * 60 * 1000;
+    const tempsEcoule = maintenant - tokenData.createdAt;
 
-    // Verifier l'expiration
-    if (Date.now() > tokenData.expiresAt) {
-      resetTokens.delete(token);
+    if (tempsEcoule > delaiExpiration) {
+      await ResetToken.deleteOne({ token });
       return res.status(400).json({
         succes: false,
         error: "EXPIRED_TOKEN",
@@ -221,7 +208,6 @@ app.post("/api/reset-password/confirm", async (req, res) => {
       });
     }
 
-    // Validation du mot de passe (4 caracteres minimum)
     if (newPassword.length < 4) {
       return res.status(400).json({
         succes: false,
@@ -229,7 +215,6 @@ app.post("/api/reset-password/confirm", async (req, res) => {
       });
     }
 
-    // Mettre a jour le mot de passe dans la base de données
     const utilisateur = await Utilisateur.findById(tokenData.utilisateurId);
     if (!utilisateur) {
       return res.status(404).json({
@@ -238,14 +223,12 @@ app.post("/api/reset-password/confirm", async (req, res) => {
       });
     }
 
-    // Le pre-save hook dans le modele Utilisateur va hasher automatiquement le mot de passe
     utilisateur.motDePasse = newPassword;
     await utilisateur.save();
 
     console.log("Mot de passe reinitialise pour:", tokenData.email);
 
-    // Supprimer le token utilise
-    resetTokens.delete(token);
+    await ResetToken.deleteOne({ token });
 
     res.json({
       succes: true,
@@ -259,27 +242,6 @@ app.post("/api/reset-password/confirm", async (req, res) => {
     });
   }
 });
-
-// Nettoyage automatique des tokens expires
-setInterval(() => {
-  const now = Date.now();
-  let cleaned = 0;
-
-  for (const [token, data] of resetTokens.entries()) {
-    if (now > data.expiresAt) {
-      resetTokens.delete(token);
-      cleaned++;
-    }
-  }
-
-  if (cleaned > 0) {
-    console.log(`Nettoyage: ${cleaned} token(s) expire(s) supprime(s)`);
-  }
-}, 30 * 60 * 1000);
-
-// ========================================
-// CHATBOT AVEC OPENAI
-// ========================================
 
 app.post("/api/chat", async (req, res) => {
   try {
@@ -334,13 +296,11 @@ app.post("/api/chat", async (req, res) => {
     const botResponse = completion.choices[0].message.content;
     console.log("Réponse OpenAI brute:", botResponse);
 
-    // Parser la réponse JSON
     try {
       const parsedResponse = JSON.parse(botResponse);
       res.json(parsedResponse);
     } catch (parseError) {
       console.log("Réponse non-JSON, utilisation du fallback");
-      // Fallback intelligent
       const lowerMessage = message.toLowerCase();
       let action = "none";
       let responseText = botResponse;
@@ -377,7 +337,6 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// Route de test OpenAI
 app.get("/api/test-openai", async (req, res) => {
   try {
     const completion = await openai.chat.completions.create({
@@ -403,18 +362,12 @@ app.get("/api/test-openai", async (req, res) => {
   }
 });
 
-// ========================================
-// ROUTES
-// ========================================
-
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
 
-// Montage des routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 
-// Route de test pour vérifier que les routes sont montées
 app.get("/api/routes-test", (req, res) => {
   res.json({
     succes: true,
@@ -434,7 +387,6 @@ app.get("/api/routes-test", (req, res) => {
   });
 });
 
-// Routes de base
 app.get("/api/test", (req, res) => {
   res.json({
     succes: true,
@@ -453,10 +405,8 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Servir les fichiers statics
 app.use(express.static(path.join(__dirname, "../")));
 
-// Routes pour les pages HTML
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../index.html"));
 });
@@ -473,7 +423,6 @@ app.get("/new_mdpo.html", (req, res) => {
   res.sendFile(path.join(__dirname, "../new_mdpo.html"));
 });
 
-// Gestion des routes non trouvées
 app.use((req, res) => {
   res.status(404).json({
     succes: false,
@@ -481,7 +430,6 @@ app.use((req, res) => {
   });
 });
 
-// Démarrage du serveur
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
